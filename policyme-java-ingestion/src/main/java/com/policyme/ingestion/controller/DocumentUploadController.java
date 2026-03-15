@@ -72,7 +72,7 @@ public class DocumentUploadController {
         }
 
         String documentId = "DOC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        log.info("📥 Received upload request: '{}' ({}), assigned ID: {}",
+        log.info(" Received upload request: '{}' ({}), assigned ID: {}",
                 file.getOriginalFilename(), file.getContentType(), documentId);
 
         try {
@@ -116,7 +116,7 @@ public class DocumentUploadController {
             ));
 
         } catch (IOException e) {
-            log.error("❌ Failed to process document upload: {}", e.getMessage(), e);
+            log.error(" Failed to process document upload: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "error", "Upload failed",
                     "message", e.getMessage()
