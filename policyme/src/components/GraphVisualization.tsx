@@ -73,8 +73,17 @@ export default function MacroGraph() {
     const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
 
     useEffect(() => {
-        // Generate high volume data
-        setGraphData(generateMockGraphData());
+        // Fetch real graph data from Neo4j backend
+        fetch("http://localhost:8000/graphrag/macro_graph")
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.nodes && data.links) {
+                    setGraphData(data);
+                } else {
+                    console.error("Invalid data format from backend", data);
+                }
+            })
+            .catch((err) => console.error("Could not fetch graph data", err));
     }, []);
 
     const isDark = theme === "dark";

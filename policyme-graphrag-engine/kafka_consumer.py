@@ -32,14 +32,29 @@ except ImportError:
     logger.warning("⚠️ aiokafka not installed. Running in MOCK consumer mode.")
 
 
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_ollama import OllamaEmbeddings
+from database import insert_document_and_chunks
+
+embedder = OllamaEmbeddings(
+    model="llama3.2:1b",
+    base_url="http://localhost:11434"
+)
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=50,
+    length_function=len,
+    is_separator_regex=False,
+)
+
 async def process_document_event(event_data: dict):
     """
     Process a DocumentEvent received from Kafka.
-    In production, this would:
-    1. Download the full text from S3
-    2. Chunk the text into clauses
-    3. Generate OpenAI embeddings for each clause
-    4. Insert nodes and relationships into Neo4j
+    1. Reads extracted text (mocking S3 download).
+    2. Chunks the text.
+    3. Generates embeddings using Ollama.
+    4. Inserts into Neo4j.
     """
     doc_id = event_data.get("documentId", "unknown")
     filename = event_data.get("originalFilename", "unknown")
@@ -48,15 +63,33 @@ async def process_document_event(event_data: dict):
     logger.info(f"📥 Processing document: {doc_id} ({filename})")
     logger.info(f"   📄 Extracted text length: {len(extracted_text)} characters")
     
-    # Simulate chunking and graph insertion
-    chunks = [extracted_text[i:i+500] for i in range(0, min(len(extracted_text), 5000), 500)]
+    # 1. Chunking 
+    chunks = text_splitter.split_text(extracted_text)
     logger.info(f"   🔪 Split into {len(chunks)} chunks for graph ingestion")
     
-    for i, chunk in enumerate(chunks):
-        # In production: generate embedding via OpenAI, insert into Neo4j
-        logger.info(f"   📊 Chunk {i+1}/{len(chunks)}: {len(chunk)} chars → [would insert into Neo4j]")
+    chunk_data_list = []
     
-    logger.info(f"✅ Document {doc_id} processed successfully. {len(chunks)} nodes would be created in Neo4j.")
+    for i, chunk_text in enumerate(chunks):
+        logger.info(f"   📊 Generating embedding for Chunk {i+1}/{len(chunks)}: {len(chunk_text)} chars")
+        # 2. Embedding
+        try:
+            embedding = await embedder.aembed_query(chunk_text)
+            chunk_data_list.append({
+                "chunk_id": f"{doc_id}-chunk-{i}",
+                "text": chunk_text,
+                "embedding": embedding,
+                "index": i
+            })
+        except Exception as e:
+            logger.error(f"Error generating embedding for chunk: {e}")
+            
+    # 3. Neo4j Insertion
+    if chunk_data_list:
+        logger.info(f"   💾 Inserting document and {len(chunk_data_list)} chunks into Neo4j...")
+        await insert_document_and_chunks(doc_id, filename, chunk_data_list)
+        logger.info(f"✅ Document {doc_id} processed successfully.")
+    else:
+         logger.warning(f"⚠️ Document {doc_id} yielded no chunks.")
 
 
 async def run_kafka_consumer():

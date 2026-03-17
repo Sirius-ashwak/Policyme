@@ -14,7 +14,9 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
                 query: body.query,
-                userId: body.userId || 'anonymous_adjuster'
+                userId: body.userId || 'anonymous_adjuster',
+                chat_history: body.chat_history || [],
+                extracted_data: body.extracted_data || {}
             }),
             next: { revalidate: 0 } // No caching for initial tests
         });

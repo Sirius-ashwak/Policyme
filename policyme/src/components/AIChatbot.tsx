@@ -19,86 +19,6 @@ interface ExtractedData {
     location?: string;
 }
 
-// Simulated AI responses based on conversation stage
-function getAIResponse(userMessage: string, messageCount: number, extracted: ExtractedData): { response: string; newData: Partial<ExtractedData> } {
-    const lower = userMessage.toLowerCase();
-
-    // First message — detect claim type
-    if (messageCount === 0) {
-        let claimType = "";
-        let response = "";
-
-        if (lower.includes("car") || lower.includes("accident") || lower.includes("collision") || lower.includes("crash") || lower.includes("vehicle") || lower.includes("drove") || lower.includes("hit")) {
-            claimType = "auto-collision";
-            response = "I'm sorry to hear about your car accident. 😔 I can help you file this as an **Auto — Collision** claim.\n\nCould you tell me **when** and **where** this happened?";
-        } else if (lower.includes("windshield") || lower.includes("hail") || lower.includes("tree") || lower.includes("storm") || lower.includes("weather") || lower.includes("theft") || lower.includes("stolen")) {
-            claimType = "auto-comprehensive";
-            response = "I understand — that sounds like it falls under **Auto — Comprehensive** coverage (weather/theft).\n\nCan you tell me **when** and **where** this occurred?";
-        } else if (lower.includes("house") || lower.includes("home") || lower.includes("pipe") || lower.includes("flood") || lower.includes("water") || lower.includes("fire") || lower.includes("roof")) {
-            claimType = "property";
-            response = "I'm sorry about the property damage. 🏠 I'll categorize this as a **Property & Casualty** claim.\n\nCan you share **when** this happened and the **location** of the property?";
-        } else if (lower.includes("health") || lower.includes("hospital") || lower.includes("medical") || lower.includes("doctor") || lower.includes("injury")) {
-            claimType = "health";
-            response = "I understand you need to file a **Health / Medical** claim. I'll help with that.\n\nCould you tell me **when** this medical event occurred?";
-        } else {
-            response = "I'd be happy to help you file a claim! Could you describe **what happened**? For example:\n\n• \"I was in a car accident\"\n• \"My windshield was damaged by hail\"\n• \"There's water damage in my house\"";
-            return { response, newData: {} };
-        }
-
-        return { response, newData: { claimType, description: userMessage } };
-    }
-
-    // Second message — extract date/location
-    if (messageCount === 1) {
-        let date = "";
-        let location = "";
-
-        // Try to extract date-like text
-        const dateKeywords = ["yesterday", "today", "last week", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "morning", "evening", "night", "march", "february", "january"];
-        for (const kw of dateKeywords) {
-            if (lower.includes(kw)) {
-                date = kw === "yesterday" ? "March 3, 2026" : kw === "today" ? "March 4, 2026" : "March 2, 2026";
-                break;
-            }
-        }
-        if (!date) date = "March 4, 2026";
-
-        // Extract location context
-        const locMatch = userMessage.match(/(?:at|near|on|in)\s+(.+?)(?:\.|,|$)/i);
-        if (locMatch) location = locMatch[1].trim();
-        else location = "Location mentioned in description";
-
-        return {
-            response: `Got it — recorded as **${date}**${location ? ` near **${location}**` : ""}.\n\nDo you have an **estimated cost** of the damage? Even a rough guess helps speed up processing.`,
-            newData: { date, location }
-        };
-    }
-
-    // Third message — extract amount
-    if (messageCount === 2) {
-        let amount = "";
-        const amountMatch = userMessage.match(/\$?([\d,]+(?:\.\d{2})?)/);
-        if (amountMatch) {
-            amount = amountMatch[1].replace(/,/g, "");
-        } else if (lower.includes("not sure") || lower.includes("don't know") || lower.includes("no idea")) {
-            amount = "TBD";
-        } else {
-            amount = "2500";
-        }
-
-        return {
-            response: `Perfect! I've recorded the estimated damage as **$${amount === "TBD" ? "TBD — To be assessed" : Number(amount).toLocaleString()}**.\n\n✅ I have everything I need! Here's what I've captured:\n\n• **Type:** ${extracted.claimType === "auto-collision" ? "Auto — Collision" : extracted.claimType === "auto-comprehensive" ? "Auto — Comprehensive" : extracted.claimType === "property" ? "Property & Casualty" : "Health / Medical"}\n• **Date:** ${extracted.date}\n• **Description:** ${extracted.description}\n• **Estimated Amount:** $${amount === "TBD" ? "TBD" : Number(amount).toLocaleString()}\n\nI'll now **auto-fill your claim form** with these details. You can review and submit it below! 👇`,
-            newData: { amount }
-        };
-    }
-
-    // Fallback
-    return {
-        response: "Your claim details have been captured! Please review the auto-filled form below and click **Submit** when ready.",
-        newData: {}
-    };
-}
-
 interface AIChatbotProps {
     onClaimExtracted: (data: ExtractedData) => void;
 }
@@ -123,43 +43,71 @@ export default function AIChatbot({ onClaimExtracted }: AIChatbotProps) {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!input.trim() || isTyping || isComplete) return;
 
+        const userText = input.trim();
         const userMsg: Message = {
             id: `user-${Date.now()}`,
             role: "user",
-            content: input.trim(),
+            content: userText,
             timestamp: new Date(),
         };
 
-        setMessages((prev) => [...prev, userMsg]);
+        const newMessages = [...messages, userMsg];
+        setMessages(newMessages);
         setInput("");
         setIsTyping(true);
 
-        // Simulate AI processing delay
-        setTimeout(() => {
-            const { response, newData } = getAIResponse(input.trim(), userMessageCount, extractedData);
-            const newExtracted = { ...extractedData, ...newData };
-            setExtractedData(newExtracted);
-            setUserMessageCount((c) => c + 1);
-
+        try {
+            const chatHistory = messages.map(m => ({ role: m.role, content: m.content }));
+            
+            const reqBody = {
+                query: userText,
+                chat_history: chatHistory,
+                extracted_data: extractedData
+            };
+            
+            const res = await fetch("/api/query", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(reqBody)
+            });
+            
+            if (!res.ok) throw new Error("Failed to fetch from LLM");
+            
+            const data = await res.json();
+            
             const aiMsg: Message = {
                 id: `ai-${Date.now()}`,
                 role: "ai",
-                content: response,
+                content: data.answer || "I'm having trouble processing that right now.",
                 timestamp: new Date(),
             };
 
             setMessages((prev) => [...prev, aiMsg]);
-            setIsTyping(false);
-
-            // After 3rd user message, claim is complete
-            if (userMessageCount >= 2) {
-                setIsComplete(true);
-                onClaimExtracted(newExtracted);
+            
+            if (data.extracted_data) {
+                const updatedExtracted = { ...extractedData, ...data.extracted_data };
+                setExtractedData(updatedExtracted);
+                
+                // If we have all required fields, mark complete
+                if (updatedExtracted.claimType && updatedExtracted.date && updatedExtracted.amount) {
+                    setIsComplete(true);
+                    onClaimExtracted(updatedExtracted);
+                }
             }
-        }, 1200 + Math.random() * 800);
+        } catch (error) {
+            console.error(error);
+            setMessages((prev) => [...prev, {
+                id: `ai-err-${Date.now()}`,
+                role: "ai",
+                content: "Sorry, I lost connection to the PolicyMe backend.",
+                timestamp: new Date()
+            }]);
+        } finally {
+            setIsTyping(false);
+        }
     };
 
     return (
@@ -265,3 +213,4 @@ export default function AIChatbot({ onClaimExtracted }: AIChatbotProps) {
         </div>
     );
 }
+
