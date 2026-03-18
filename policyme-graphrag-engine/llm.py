@@ -11,7 +11,8 @@ load_dotenv()
 local_llm = ChatOllama(
     model="llama3.2:1b",
     base_url="http://localhost:11434",
-    temperature=0.1
+    temperature=0.1,
+    format="json"
 )
 
 async def generate_answer_with_context(query: str, context_data: dict, chat_history: list = None, extracted_data: dict = None):

@@ -58,7 +58,7 @@ async def process_graphrag_query(request: QueryRequest):
         query_embedding = await embedder.aembed_query(request.query)
         
         # Step 1: Query Neo4j Graph for relevant clauses and multi-hop context
-        context_data = await search_neo4j_graph(request.query, query_embedding)
+        context_data = await search_neo4j_graph(request.query)
         
         # Step 2: Generate response using OpenAI GPT-4 with retrieved context
         result = await generate_answer_with_context(
