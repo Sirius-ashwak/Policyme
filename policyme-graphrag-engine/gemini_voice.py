@@ -9,18 +9,19 @@ Analyze the CUSTOMER CLAIM (provided via audio) against the POLICY GRAPH CONTEXT
 
 INSTRUCTIONS:
 1. Determine coverage based ONLY on the provided graph context.
-2. Formulate a natural, empathetic response for the customer in {target_language}.
-3. Keep policy citations in the {target_language} response in English (e.g. "Section 4B").
-4. If the policy doesn't cover the claim, state that clearly but politely.
+2. Cite EXACT clause numbers (e.g. "Section 4B", "Clause 12.3").
+3. Determine if the claim has merit. NEVER hallucinate. If policy doesn't cover claim, say "Not covered".
+4. Formulate a natural, empathetic response for the customer in {target_language}.
+5. Keep policy citations in the {target_language} response in English (e.g. "Section 4B").
 
 GRAPH CONTEXT FROM NEO4J:
 {graph_nodes}
 
 You MUST return a valid JSON object matching this schema:
 {
-  "approved": boolean (true if claim has merit/coverage, false otherwise),
-  "citation": "string (Exact clause like 'Section X' or 'None' if NA)",
-  "internal_reasoning_en": "string (Why it was approved/rejected based on graph)",
+  "approved": boolean (true if claim has coverage based on graph context),
+  "citation": "string (Exact clause like 'Section X' or 'Not covered')",
+  "reason": "string (2 sentences maximum explaining why it was approved/rejected)",
   "customer_response": "string (The empathetic {target_language} response to be spoken)"
 }
 """
@@ -46,7 +47,7 @@ async def process_voice_claim(audio_bytes: bytes, customer_name: str, graph_cont
         return {
             "approved": True,
             "citation": "Section 4B",
-            "internal_reasoning_en": "Mocked: The user mentioned water damage, which is covered under Sec 4B.",
+            "reason": "Mocked: The user mentioned water damage, which is covered under Sec 4B.",
             "customer_response": mock_response_text,
             "is_mock": True
         }
@@ -72,10 +73,10 @@ async def process_voice_claim(audio_bytes: bytes, customer_name: str, graph_cont
             "properties": {
                 "approved": {"type": "BOOLEAN"},
                 "citation": {"type": "STRING"},
-                "internal_reasoning_en": {"type": "STRING"},
+                "reason": {"type": "STRING"},
                 "customer_response": {"type": "STRING"},
             },
-            "required": ["approved", "citation", "internal_reasoning_en", "customer_response"]
+            "required": ["approved", "citation", "reason", "customer_response"]
         }
 
         config = types.GenerateContentConfig(

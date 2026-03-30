@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 
 from database import search_neo4j_graph, get_macro_graph, get_customer_policy_graph
-from llm import generate_answer_with_context
+from llm import generate_answer_with_context, evaluate_underwriting_risk
 from gemini_voice import process_voice_claim
 import os
 from dotenv import load_dotenv
@@ -110,6 +110,19 @@ async def handle_voice_claim(
         
     except Exception as e:
         print(f"Error handling voice claim: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class UnderwriteRequest(BaseModel):
+    customer_data: Dict[str, Any]
+
+@app.post("/api/underwrite")
+async def handle_underwrite(request: UnderwriteRequest):
+    try:
+        # Run the local LLM to assess risk
+        risk_assessment = await evaluate_underwriting_risk(request.customer_data)
+        return risk_assessment
+    except Exception as e:
+        print(f"Error handling underwrite logic: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

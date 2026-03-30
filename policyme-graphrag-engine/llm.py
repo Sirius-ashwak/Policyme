@@ -117,3 +117,63 @@ async def generate_answer_with_context(query: str, context_data: dict, chat_hist
         "confidence": confidence,
         "extracted_data": extracted_data
     }
+
+RISK_ASSESSMENT_PROMPT = """
+CUSTOMER APPLICATION: {customer_data}
+
+ANALYZE RISK FACTORS:
+1. Age, driving history, vehicle age
+2. Compare against institutional guidelines
+3. Return JSON: {{"risk_score": <number 0-100>, "factors": ["list of strings"], "recommend": "approve" | "reject"}}
+
+Be conservative. Enterprise underwriting requires precision.
+"""
+
+async def evaluate_underwriting_risk(customer_data: dict) -> dict:
+    """
+    Evaluates the risk of a customer application using the Local Ollama Model.
+    """
+    # 1. Fallback / Mock values
+    default_response = {
+        "risk_score": 50,
+        "factors": ["Insufficient data processed"],
+        "recommend": "reject",
+        "is_mock": True
+    }
+    
+    if not local_llm:
+        return default_response
+        
+    try:
+        system_prompt = "You are a senior insurance underwriter. You output strict JSON only."
+        prompt_text = RISK_ASSESSMENT_PROMPT.format(customer_data=json.dumps(customer_data))
+        
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=prompt_text)
+        ]
+        
+        print("Evaluating underwriting risk with Local Ollama...")
+        ai_response = await local_llm.ainvoke(messages)
+        content = ai_response.content
+        
+        # Parse JSON
+        if "```json" in content:
+            json_str = content.split("```json")[1].split("```")[0]
+        elif "```" in content:
+            json_str = content.split("```")[1].split("```")[0]
+        else:
+            json_str = content
+            
+        parsed = json.loads(json_str.strip())
+        
+        # Ensure fallback defaults exist in the parsed object
+        return {
+            "risk_score": parsed.get("risk_score", 50),
+            "factors": parsed.get("factors", ["Unknown factors"]),
+            "recommend": parsed.get("recommend", "reject").lower()
+        }
+        
+    except Exception as e:
+        print(f"Error evaluating risk: {e}")
+        return default_response
