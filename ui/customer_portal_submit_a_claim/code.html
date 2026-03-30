@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Submit a Claim | InsurAI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-container": "#a1befd",
+              "secondary-fixed": "#d8e2ff",
+              "primary-container": "#156aff",
+              "secondary": "#405e96",
+              "on-secondary-fixed-variant": "#26467d",
+              "surface-tint": "#0054d6",
+              "on-primary-container": "#fefcff",
+              "primary-fixed": "#dae1ff",
+              "surface-container-high": "#e9e7ed",
+              "on-tertiary-fixed-variant": "#7c2e00",
+              "secondary-fixed-dim": "#adc6ff",
+              "on-secondary-fixed": "#001a41",
+              "surface-container-low": "#f4f3f8",
+              "on-tertiary-fixed": "#351000",
+              "surface-container-highest": "#e3e2e7",
+              "on-primary": "#ffffff",
+              "on-primary-fixed": "#001849",
+              "outline-variant": "#c1c6d7",
+              "tertiary-container": "#c64f00",
+              "primary": "#0052d1",
+              "error-container": "#ffdad6",
+              "primary-fixed-dim": "#b3c5ff",
+              "tertiary-fixed-dim": "#ffb595",
+              "surface-container-lowest": "#ffffff",
+              "surface-bright": "#faf9fe",
+              "error": "#ba1a1a",
+              "surface-variant": "#e3e2e7",
+              "surface": "#faf9fe",
+              "outline": "#717786",
+              "inverse-primary": "#b3c5ff",
+              "on-error": "#ffffff",
+              "on-tertiary-container": "#fffbff",
+              "on-surface-variant": "#414755",
+              "on-tertiary": "#ffffff",
+              "on-secondary": "#ffffff",
+              "on-surface": "#1a1b1f",
+              "background": "#faf9fe",
+              "on-background": "#1a1b1f",
+              "surface-dim": "#dad9df",
+              "tertiary": "#9e3d00",
+              "on-error-container": "#93000a",
+              "surface-container": "#eeedf3",
+              "on-primary-fixed-variant": "#003fa4",
+              "inverse-on-surface": "#f1f0f5",
+              "tertiary-fixed": "#ffdbcc",
+              "on-secondary-container": "#2d4c83",
+              "inverse-surface": "#2f3034"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-nav {
+        background: rgba(250, 249, 254, 0.8);
+        backdrop-filter: blur(20px);
+      }
+      .primary-gradient {
+        background: linear-gradient(135deg, #0052d1 0%, #156aff 100%);
+      }
+      input:focus, textarea:focus, select:focus {
+        outline: none !important;
+        border-color: rgba(0, 82, 209, 0.2) !important;
+        box-shadow: 0 0 0 4px rgba(0, 82, 209, 0.05) !important;
+      }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- Top Navigation (Shell Suppressed per Rule: Focused Task) -->
+<!-- We render a specialized header for the transactional flow -->
+<header class="fixed top-0 w-full z-50 glass-nav">
+<div class="max-w-3xl mx-auto h-16 px-6 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<a class="flex items-center gap-2 text-primary hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+<span class="font-label text-sm font-medium">Dashboard</span>
+</a>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xl font-bold tracking-tighter text-slate-900">InsurAI</span>
+</div>
+<div class="w-24 flex justify-end">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-20 px-6">
+<div class="max-w-xl mx-auto">
+<!-- Step Indicator -->
+<div class="mb-12">
+<div class="flex items-center justify-between mb-4">
+<h1 class="text-2xl font-extrabold font-headline tracking-tight text-on-surface">File New Claim</h1>
+<span class="font-label text-xs font-semibold text-primary bg-primary-fixed/30 px-3 py-1 rounded-full">Step 1 of 3</span>
+</div>
+<div class="flex gap-2 h-1.5 w-full">
+<div class="flex-1 rounded-full primary-gradient"></div>
+<div class="flex-1 rounded-full bg-surface-container-high"></div>
+<div class="flex-1 rounded-full bg-surface-container-high"></div>
+</div>
+<div class="flex justify-between mt-3">
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-primary">Incident Details</span>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-40">Evidence</span>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-40">Review</span>
+</div>
+</div>
+<!-- Form Container -->
+<div class="space-y-10">
+<!-- Section 1: Basic Info -->
+<section class="space-y-6">
+<div class="space-y-1">
+<h2 class="text-lg font-bold font-headline">Incident Details</h2>
+<p class="text-on-surface-variant text-sm">Tell us what happened with your protected asset.</p>
+</div>
+<div class="grid grid-cols-1 gap-6">
+<!-- Incident Type -->
+<div class="space-y-2">
+<label class="font-label text-xs font-bold text-on-surface-variant uppercase tracking-wider ml-1">Type of Claim</label>
+<div class="relative">
+<select class="w-full bg-surface-container-highest/40 border-none rounded-xl py-4 px-4 appearance-none font-medium text-on-surface cursor-pointer">
+<option>Select incident type</option>
+<option>Vehicle Collision</option>
+<option>Property Damage</option>
+<option>Theft / Burglary</option>
+<option>Natural Disaster</option>
+<option>Medical Emergency</option>
+</select>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="unfold_more">unfold_more</span>
+</div>
+</div>
+</div>
+<!-- Date and Time -->
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="font-label text-xs font-bold text-on-surface-variant uppercase tracking-wider ml-1">Date of Incident</label>
+<div class="relative">
+<input class="w-full bg-surface-container-highest/40 border-none rounded-xl py-4 px-4 font-medium text-on-surface" type="date"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label text-xs font-bold text-on-surface-variant uppercase tracking-wider ml-1">Approx. Time</label>
+<div class="relative">
+<input class="w-full bg-surface-container-highest/40 border-none rounded-xl py-4 px-4 font-medium text-on-surface" type="time"/>
+</div>
+</div>
+</div>
+<!-- Description -->
+<div class="space-y-2">
+<label class="font-label text-xs font-bold text-on-surface-variant uppercase tracking-wider ml-1">Incident Description</label>
+<textarea class="w-full bg-surface-container-highest/40 border-none rounded-xl py-4 px-4 font-medium text-on-surface resize-none placeholder:text-on-surface-variant/50" placeholder="Provide a detailed account of the events leading up to the incident..." rows="5"></textarea>
+</div>
+</div>
+</section>
+<!-- Section 2: File Upload (Immediate Context) -->
+<section class="space-y-6">
+<div class="space-y-1">
+<h2 class="text-lg font-bold font-headline">Supporting Evidence</h2>
+<p class="text-on-surface-variant text-sm">Upload photos of the damage or relevant documents.</p>
+</div>
+<div class="group relative">
+<div class="border-2 border-dashed border-outline-variant/30 rounded-2xl p-10 flex flex-col items-center justify-center bg-surface-container-low transition-all group-hover:bg-surface-container">
+<div class="w-16 h-16 rounded-full bg-primary-container/10 flex items-center justify-center text-primary mb-4">
+<span class="material-symbols-outlined text-3xl" data-icon="cloud_upload">cloud_upload</span>
+</div>
+<p class="text-on-surface font-semibold mb-1">Drag and drop files here</p>
+<p class="text-on-surface-variant text-xs mb-6">PNG, JPG or PDF up to 10MB each</p>
+<button class="bg-white border border-outline-variant/20 px-6 py-2.5 rounded-lg font-label text-sm font-semibold shadow-sm hover:translate-y-[-1px] active:scale-95 transition-all">
+                                Browse Files
+                            </button>
+</div>
+<input class="absolute inset-0 opacity-0 cursor-pointer" multiple="" type="file"/>
+</div>
+<!-- File List (Simulated) -->
+<div class="space-y-2">
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover grayscale opacity-60" data-alt="blurred close-up of car bumper damage with scratch marks and dented silver paint" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB9Mpx-jk-6PJ3pdJCQyukM5xH0WxPFvqyxwEbnB17HTHLCRxcfw3kTQ6bg8_RiDsGaK3PXd9G98AIhWf-XoLsx2ZogWKCyaiXEagqXosMo9HZ6-qYvZ-uLz0JdMuil_c58CDE6dz4W_r4JkUTg708sOagrag4cAXI41aTZrbmiyIRv7FtIHdJWd6qXvH0znOpEi43KHUp10QyyMnPRkDS5FcKyXlzqyOtj32ctbXWGMT8fJ9EvIiOwwNM_Az4MHG5k10AXK7PZsvn"/>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface">damage_front_right.jpg</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-tighter">1.2 MB • Uploading 80%</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="close">close</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Footer Actions -->
+<div class="pt-10 flex items-center justify-between">
+<button class="px-6 py-4 font-label text-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2">
+                        Save for later
+                    </button>
+<button class="primary-gradient px-10 py-4 rounded-xl font-headline text-sm font-bold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+                        Continue to Photos
+                    </button>
+</div>
+<!-- Security/Trust Badge -->
+<div class="flex items-center justify-center gap-2 pt-8 opacity-40">
+<span class="material-symbols-outlined text-xs" data-icon="lock" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">End-to-End Encrypted Secure Submission</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB Suppressed per Rule: transactional screen -->
+<footer class="max-w-xl mx-auto py-10 px-6 text-center border-t border-outline-variant/10">
+<p class="text-[11px] text-on-surface-variant/60 font-medium">
+            © 2024 InsurAI Financial Services. All claims are subject to verification and policy terms.
+        </p>
+</footer>
+</body></html>

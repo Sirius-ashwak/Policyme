@@ -1,124 +1,129 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Clock, CheckCircle2, AlertCircle, Eye, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
-const claims = [
-    {
-        id: "CLM-2026-48291",
-        type: "Auto — Collision",
-        date: "Mar 2, 2026",
-        status: "Approved",
-        amount: "$4,250.00",
-        description: "Rear-end collision at intersection of Main St & 5th Ave. Bumper and trunk damage.",
-    },
-    {
-        id: "CLM-2026-48350",
-        type: "Auto — Comprehensive",
-        date: "Mar 3, 2026",
-        status: "Under Review",
-        amount: "$1,800.00",
-        description: "Windshield cracked by fallen tree branch during storm.",
-    },
-    {
-        id: "CLM-2026-48412",
-        type: "Property — Water Damage",
-        date: "Mar 4, 2026",
-        status: "Pending",
-        amount: "$12,500.00",
-        description: "Basement flooding due to burst pipe. Damage to flooring and furniture.",
-    },
-];
-
-const statusConfig: Record<string, { color: string; bg: string; icon: any }> = {
-    Approved: { color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
-    "Under Review": { color: "text-amber-700", bg: "bg-amber-50 border-amber-200", icon: Clock },
-    Pending: { color: "text-blue-700", bg: "bg-blue-50 border-blue-200", icon: AlertCircle },
-};
-
-export default function PortalHome() {
+export default function PortalDashboard() {
     return (
-        <div className="space-y-8">
+        <div className="animate-fade-in">
             {/* Welcome Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <h1 className="text-3xl font-bold text-slate-900">Welcome back, John</h1>
-                <p className="text-slate-500 mt-1">Here's the latest on your insurance claims.</p>
-            </motion.div>
+            <header className="mb-12">
+                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[var(--insurai-on-surface)] mb-2 font-[Manrope]">
+                    Hello, Sarah Mitchell
+                </h1>
+                <p className="text-[var(--insurai-on-surface-variant)] text-lg max-w-2xl font-[Manrope] leading-relaxed">
+                    Your portfolio is up to date. You have one claim under review and your premium for the Home Policy is due in 12 days.
+                </p>
+            </header>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                    { label: "Active Claims", value: "3", color: "from-blue-500 to-indigo-500" },
-                    { label: "Approved", value: "1", color: "from-emerald-500 to-teal-500" },
-                    { label: "Pending Review", value: "2", color: "from-amber-500 to-orange-500" },
-                ].map((stat, i) => (
-                    <motion.div
-                        key={stat.label}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
-                    >
-                        <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${stat.color}`} />
-                        <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                        <p className="text-3xl font-bold text-slate-900 mt-1">{stat.value}</p>
-                    </motion.div>
-                ))}
-            </div>
+            {/* Bento Grid Layout */}
+            <div className="grid grid-cols-1 gap-8">
+                {/* === Main Section === */}
+                <section className="space-y-8">
+                    {/* Active Policies Header */}
+                    <div className="flex justify-between items-end mb-2">
+                        <h2 className="text-2xl font-bold font-[Manrope]">Active Policies</h2>
+                        <button className="text-[var(--primary)] font-[Inter] text-sm font-semibold hover:underline">
+                            View all
+                        </button>
+                    </div>
 
-            {/* Claims List */}
-            <div>
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-slate-900">Your Claims</h2>
-                    <Link href="/portal/submit"
-                        className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
-                        File New Claim <ChevronRight className="h-4 w-4" />
-                    </Link>
-                </div>
-
-                <div className="space-y-3">
-                    {claims.map((claim, i) => {
-                        const config = statusConfig[claim.status];
-                        const StatusIcon = config.icon;
-
-                        return (
-                            <motion.div
-                                key={claim.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.2 + i * 0.1 }}
-                                className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all group cursor-pointer"
-                            >
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className="text-xs font-mono text-slate-400">{claim.id}</span>
-                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.bg} ${config.color}`}>
-                                                <StatusIcon className="h-3 w-3" />
-                                                {claim.status}
-                                            </span>
-                                        </div>
-                                        <h3 className="font-semibold text-slate-900">{claim.type}</h3>
-                                        <p className="text-sm text-slate-500 mt-0.5 line-clamp-1">{claim.description}</p>
-                                    </div>
-                                    <div className="flex items-center gap-4 sm:text-right">
-                                        <div>
-                                            <p className="text-lg font-bold text-slate-900">{claim.amount}</p>
-                                            <p className="text-xs text-slate-400">{claim.date}</p>
-                                        </div>
-                                        <div className="p-2 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                                            <Eye className="h-4 w-4" />
-                                        </div>
-                                    </div>
+                    {/* Policy Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {/* Auto Policy */}
+                        <div className="bg-[var(--insurai-surface-container-lowest)] p-8 rounded-2xl ambient-shadow ambient-shadow-hover ghost-border group cursor-pointer transition-all duration-300">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-[var(--primary)]">
+                                    <span className="material-symbols-outlined">directions_car</span>
                                 </div>
-                            </motion.div>
-                        );
-                    })}
-                </div>
+                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                                    Active
+                                </span>
+                            </div>
+                            <h3 className="text-xl font-bold mb-1">Tesla Model 3</h3>
+                            <p className="text-[var(--insurai-on-surface-variant)] text-sm font-[Inter] mb-6">
+                                ID: AU-82910-XM
+                            </p>
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-[var(--insurai-on-surface-variant)]">Total Coverage</span>
+                                    <span className="font-bold">$100,000</span>
+                                </div>
+                                <div className="w-full bg-[var(--insurai-surface-container-high)] h-1.5 rounded-full overflow-hidden">
+                                    <div className="bg-[var(--primary)] h-full w-3/4 rounded-full transition-all duration-1000" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Home Policy */}
+                        <div className="bg-[var(--insurai-surface-container-lowest)] p-8 rounded-2xl ambient-shadow ambient-shadow-hover ghost-border group cursor-pointer transition-all duration-300">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="w-12 h-12 bg-orange-50 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-[var(--insurai-tertiary)]">
+                                    <span className="material-symbols-outlined">home</span>
+                                </div>
+                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                                    Active
+                                </span>
+                            </div>
+                            <h3 className="text-xl font-bold mb-1">Main Residence</h3>
+                            <p className="text-[var(--insurai-on-surface-variant)] text-sm font-[Inter] mb-6">
+                                ID: HM-44012-BY
+                            </p>
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-[var(--insurai-on-surface-variant)]">Premium Due</span>
+                                    <span className="font-bold text-[var(--insurai-error)]">Oct 24, 2023</span>
+                                </div>
+                                <div className="w-full bg-[var(--insurai-surface-container-high)] h-1.5 rounded-full overflow-hidden">
+                                    <div className="bg-[var(--insurai-tertiary)] h-full w-full rounded-full" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Recent Activity Timeline */}
+                    <div className="mt-12 bg-[var(--insurai-surface-container-low)] rounded-3xl p-8">
+                        <h2 className="text-2xl font-bold font-[Manrope] mb-8">Recent Activity</h2>
+                        <div className="space-y-8 relative before:content-[''] before:absolute before:left-[1.2rem] before:top-2 before:bottom-2 before:w-px before:bg-[var(--insurai-outline-variant)]/30">
+                            {/* Claim Progress */}
+                            <div className="relative pl-12">
+                                <div className="absolute left-0 top-1 w-10 h-10 bg-[var(--insurai-surface-container-lowest)] rounded-full border-2 border-[var(--primary)] flex items-center justify-center z-10">
+                                    <span className="material-symbols-outlined text-[var(--primary)] text-xl">description</span>
+                                </div>
+                                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
+                                    <div>
+                                        <h4 className="font-bold text-lg">Active Claim: Windshield Damage</h4>
+                                        <p className="text-[var(--insurai-on-surface-variant)] text-sm mt-1">
+                                            Status: <span className="font-semibold text-[var(--primary)]">In Review</span> • Case #CL-90122
+                                        </p>
+                                    </div>
+                                    <span className="text-xs font-[Inter] text-[var(--insurai-on-surface-variant)] bg-[var(--insurai-surface-container-highest)] px-3 py-1 rounded-full self-start">
+                                        Today, 09:42 AM
+                                    </span>
+                                </div>
+                                <p className="mt-4 text-sm text-[var(--insurai-on-surface-variant)] leading-relaxed">
+                                    Our adjusters are verifying the quote from Safelite AutoGlass using our deterministic GraphRAG engine. We expect a decision within 24 hours.
+                                </p>
+                            </div>
+
+                            {/* Application Progress */}
+                            <div className="relative pl-12">
+                                <div className="absolute left-0 top-1 w-10 h-10 bg-[var(--insurai-surface-container-lowest)] rounded-full border-2 border-[var(--insurai-secondary)] flex items-center justify-center z-10">
+                                    <span className="material-symbols-outlined text-[var(--insurai-secondary)] text-xl">shield</span>
+                                </div>
+                                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
+                                    <div>
+                                        <h4 className="font-bold text-lg">New Application: Pet Insurance</h4>
+                                        <p className="text-[var(--insurai-on-surface-variant)] text-sm mt-1">
+                                            Status: <span className="font-semibold text-[var(--insurai-secondary)]">Pending Underwriting</span>
+                                        </p>
+                                    </div>
+                                    <span className="text-xs font-[Inter] text-[var(--insurai-on-surface-variant)] bg-[var(--insurai-surface-container-highest)] px-3 py-1 rounded-full self-start">
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     );

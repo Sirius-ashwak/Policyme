@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>InsurAI - GraphRAG Claim Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .label-font { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-header {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        /* Custom scrollbar for premium feel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e3e2e7; border-radius: 10px; }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(.33); }
+            80%, 100% { opacity: 0; }
+        }
+        .node-pulse::before {
+            content: '';
+            position: absolute;
+            width: 300%;
+            height: 300%;
+            border-radius: 100%;
+            background-color: rgba(0, 82, 209, 0.2);
+            animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "secondary-container": "#a1befd",
+                "primary-container": "#156aff",
+                "secondary-fixed": "#d8e2ff",
+                "on-secondary-fixed-variant": "#26467d",
+                "secondary": "#405e96",
+                "surface-tint": "#0054d6",
+                "on-primary-container": "#fefcff",
+                "primary-fixed": "#dae1ff",
+                "surface-container-high": "#e9e7ed",
+                "secondary-fixed-dim": "#adc6ff",
+                "on-tertiary-fixed-variant": "#7c2e00",
+                "surface-container-low": "#f4f3f8",
+                "on-secondary-fixed": "#001a41",
+                "on-tertiary-fixed": "#351000",
+                "on-primary-fixed": "#001849",
+                "surface-container-highest": "#e3e2e7",
+                "on-primary": "#ffffff",
+                "outline-variant": "#c1c6d7",
+                "tertiary-container": "#c64f00",
+                "error-container": "#ffdad6",
+                "primary": "#0052d1",
+                "tertiary-fixed-dim": "#ffb595",
+                "surface-container-lowest": "#ffffff",
+                "primary-fixed-dim": "#b3c5ff",
+                "surface-bright": "#faf9fe",
+                "surface-variant": "#e3e2e7",
+                "error": "#ba1a1a",
+                "inverse-primary": "#b3c5ff",
+                "outline": "#717786",
+                "surface": "#faf9fe",
+                "on-tertiary-container": "#fffbff",
+                "on-error": "#ffffff",
+                "on-surface-variant": "#414755",
+                "on-surface": "#1a1b1f",
+                "background": "#faf9fe",
+                "on-secondary": "#ffffff",
+                "on-tertiary": "#ffffff",
+                "surface-dim": "#dad9df",
+                "on-background": "#1a1b1f",
+                "tertiary": "#9e3d00",
+                "surface-container": "#eeedf3",
+                "inverse-on-surface": "#f1f0f5",
+                "on-primary-fixed-variant": "#003fa4",
+                "on-error-container": "#93000a",
+                "on-secondary-container": "#2d4c83",
+                "tertiary-fixed": "#ffdbcc",
+                "inverse-surface": "#2f3034"
+              },
+              fontFamily: {
+                "headline": ["Manrope"],
+                "body": ["Manrope"],
+                "label": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0.5rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
+<div class="flex justify-between items-center h-16 px-6 w-full max-w-[1920px] mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-slate-900">InsurAI</span>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium Manrope text-slate-500 hover:text-slate-900 transition-colors" href="#">Portal</a>
+<a class="text-sm font-medium Manrope text-slate-500 hover:text-slate-900 transition-colors" href="#">Underwriter</a>
+<a class="text-sm font-medium Manrope text-blue-600 border-b-2 border-blue-600 pb-1" href="#">Adjuster</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-sm w-64 focus:ring-2 focus:ring-primary/20" placeholder="Search claims..." type="text"/>
+</div>
+<button class="p-2 text-slate-500 hover:bg-slate-50/50 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-50/50 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-white" data-alt="Professional portrait of a male insurance adjuster in a modern office environment, soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkMRAt4bp52qPEDu8XOc6N4s_PKMdrf8_o3Xnjh-_g2oByhaYHq4ybwUUqdMjNKwIK-Ym6_BzKVE1WpdFz8ETiIB7JMeBdfHBU1z_5c7qIM-lxGt2w7ehokhFiuI7oBaHd0DIufbLdxIkPt2DJkOFoo5aIhuCBQJEEFJ5Wo_x8iQCY9q5u-cB37Qb6Txq_p9DdNLHNKFZuydG-cRTrpiGioQWTEsCOSHu9g4IV7tEiRM2n3mMrTBcSnOh22PE2lvLUlXkCNWRRYiwe"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-16 flex flex-col gap-2 p-4 border-r border-slate-100 bg-slate-50 hidden lg:flex">
+<div class="mb-6 px-4">
+<h3 class="text-xs font-semibold uppercase tracking-widest Inter text-slate-400">Navigation</h3>
+<p class="text-sm font-medium Manrope text-slate-900">Management</p>
+</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-900 hover:translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="text-sm font-medium">Queues</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-900 hover:translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-sm font-medium">Assessments</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-white text-blue-600 rounded-lg shadow-sm font-bold" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-sm">Claims</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-slate-200/50 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-900" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-900" href="#">
+<span class="material-symbols-outlined">archive</span>
+<span class="text-sm font-medium">Archive</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 pt-24 pb-12 px-8">
+<div class="max-w-7xl mx-auto">
+<!-- Header Section -->
+<header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider label-font">GraphRAG Enabled</span>
+<span class="text-on-surface-variant text-sm label-font">Claim ID: #CLM-88294-WX</span>
+</div>
+<h1 class="text-4xl font-extrabold tracking-tight text-on-surface font-headline">Intelligence Interface</h1>
+</div>
+<div class="flex gap-3">
+<button class="px-5 py-2.5 rounded-xl text-sm font-bold border border-outline-variant/20 hover:bg-surface-container-low transition-all">
+                        Reject Claim
+                    </button>
+<button class="px-6 py-2.5 rounded-xl text-sm font-bold text-on-primary bg-gradient-to-br from-primary to-primary-container shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                        Approve for Payout
+                    </button>
+</div>
+</header>
+<!-- Intelligence Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Source Data -->
+<div class="lg:col-span-5 space-y-8">
+<!-- Incident Card -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">description</span>
+<h2 class="text-lg font-bold tracking-tight">Incident Description</h2>
+</div>
+<div class="prose prose-slate prose-sm max-w-none">
+<p class="text-on-surface-variant leading-relaxed">
+                                On the evening of October 14th, at approximately 21:45 EST, a localized microburst occurred near the claimant's property in suburban Georgia. High-velocity winds estimated at 75mph resulted in several large oak limbs detaching and impacting the primary residential structure's roof.
+                            </p>
+<p class="text-on-surface-variant leading-relaxed mt-4">
+                                The claimant reports significant water ingress following the incident, causing damage to the master bedroom ceiling and hardwood flooring. Localized flooding was noted, but initial assessment suggests the primary cause was structural compromise of the roof rather than rising ground water.
+                            </p>
+</div>
+<div class="mt-8 pt-8 border-t border-slate-100/50">
+<h4 class="text-xs font-bold uppercase tracking-widest Inter text-slate-400 mb-4">Supporting Evidence</h4>
+<div class="grid grid-cols-3 gap-3">
+<div class="aspect-square rounded-lg bg-slate-100 overflow-hidden group cursor-zoom-in">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Close-up of damaged roof shingles and a fallen tree branch after a storm, dramatic shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOVChh5jhbx8B6X_bHEdAX7Iwd1_oJaKVdWZr7PPIjomsjOLbv_pSKev33iTpUZ-MWB8w-Qv58gsPmzQQxyxTdPEegQVBCZ3oZeL6XlzYQwj9f4c5W3Xj4YRtss6FKRrWNSHdKlL0th1BeoumGN35p7T9jEKxQq4cy3mpbpwOVjt7kQR_9GYODRNRi3VzsV-ipMNI5P_l66qjDumaf2CHyg-TBlPmyhQ0oBAVvSNTUnSxszAQC6f8SMyqhyJc9nfuM3qDxe6APeewk"/>
+</div>
+<div class="aspect-square rounded-lg bg-slate-100 overflow-hidden group cursor-zoom-in">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Interior damage showing water stains on a white ceiling with peeling paint, soft diffused light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6KI8p_V3eFj-gcp9pNLZxUmrfBHWkxycFQY_g4bvVw4d0qtePHXCPz8lGzyKTmg9aoC9q3F2GAIANN-gp0zxWvk3XFqYR9oGvnrmLK0gTUZ61wTLk79AH_ot-HAXOJ8J4j2LNqTcrjr2vSuGLUr0kUSPP-orDp1sMW_nhtKRqQCKkuXGCgOZArfJegeYCjmOy-D1PobQfjHGtXDCkydyqITNjJ3r7-ZBzRXMtUQuEQ7HvCG8FH2_9jwNcqlDs6H8BiBp8wj66pcGZ"/>
+</div>
+<div class="relative aspect-square rounded-lg bg-slate-100 overflow-hidden group cursor-pointer flex items-center justify-center bg-slate-200">
+<span class="material-symbols-outlined text-slate-500">add</span>
+<span class="absolute bottom-2 text-[10px] font-bold uppercase label-font text-slate-500">+12 more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Policy Clause Context -->
+<section class="bg-surface-container-low rounded-xl p-8">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary">database</span>
+<h2 class="text-lg font-bold tracking-tight">GraphRAG Policy Extraction</h2>
+</div>
+<div class="space-y-4">
+<div class="p-4 bg-white rounded-lg border-l-4 border-primary">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-bold text-primary uppercase label-font">Clause 4B: Weather Phenomena</span>
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-100">Match Confidence: 99.8%</span>
+</div>
+<p class="text-sm font-medium text-on-surface italic mb-3">"The policy covers direct physical loss caused by windstorm, including microbursts, provided the roof sustains actual damage."</p>
+<a class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+[View Original PDF - Page 42]
+</a>
+</div>
+<div class="p-4 bg-white rounded-lg border-l-4 border-slate-300">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-bold text-slate-500 uppercase label-font">Clause 12.2: Exclusions</span>
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-50 text-slate-600 font-bold border border-slate-100">Match Confidence: 84.2%</span>
+</div>
+<p class="text-sm font-medium text-on-surface-variant mb-3">"Water damage resulting from rising ground water or external flooding is excluded unless specific flood riders are active."</p>
+<a class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+[View Original PDF - Page 108]
+</a>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: AI Analysis -->
+<div class="lg:col-span-7 space-y-8">
+<!-- GraphRAG Intelligence View -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0_20px_40px_rgba(26,27,31,0.04)] ring-1 ring-primary/5">
+<div class="flex justify-between items-start mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">psychology</span>
+</div>
+<div>
+<h2 class="text-xl font-extrabold tracking-tight font-headline">AI Analysis Engine</h2>
+<p class="text-xs font-medium text-slate-500 label-font uppercase tracking-widest">Confidence Score: 98.4%</p>
+</div>
+</div>
+<div class="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-sm font-bold">Claim Valid</span>
+</div>
+</div>
+<!-- Highlight Box -->
+<div class="bg-primary/5 rounded-2xl p-6 border border-primary/10 mb-8">
+<h3 class="text-primary font-bold mb-2">Verdict: Claim valid under Section 4B: Weather Damage</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+                                GraphRAG cross-referenced meteorological data from the NOAA Georgia station with the incident timestamp. Local wind speeds of 78mph were confirmed. Structural graph mapping indicates the roof compromise directly caused the subsequent water ingress, nullifying the Flood Exclusion clause.
+                            </p>
+</div>
+<!-- Knowledge Graph Connection -->
+<div class="mb-8">
+<h4 class="text-xs font-bold uppercase tracking-widest Inter text-slate-400 mb-6">Cross-Reference Graph</h4>
+<div class="relative bg-slate-900 h-80 rounded-xl overflow-hidden shadow-inner flex items-center justify-center">
+<!-- Interactive Simulation Elements -->
+<div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, #ffffff 1px, transparent 0); background-size: 32px 32px;"></div>
+<!-- SVG for Connections (Animated looking) -->
+<svg class="absolute inset-0 w-full h-full z-0" xmlns="http://www.w3.org/2000/svg">
+<path d="M 120 100 L 320 160" stroke="rgba(0,122,255,0.4)" stroke-dasharray="4 2" stroke-width="1.5"></path>
+<path d="M 120 220 L 320 160" stroke="rgba(0,122,255,0.4)" stroke-dasharray="4 2" stroke-width="1.5"></path>
+<path d="M 520 100 L 320 160" stroke="rgba(0,122,255,0.8)" stroke-width="2"></path>
+<path d="M 520 220 L 320 160" stroke="rgba(0,122,255,0.4)" stroke-dasharray="4 2" stroke-width="1.5"></path>
+</svg>
+<!-- Nodes -->
+<div class="relative w-full h-full flex items-center justify-center">
+<!-- Center Node -->
+<div class="relative flex flex-col items-center gap-2 z-20">
+<div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white shadow-[0_0_30px_rgba(0,122,255,0.5)] node-pulse">
+<span class="material-symbols-outlined text-2xl">cyclone</span>
+</div>
+<span class="text-[10px] font-bold uppercase label-font text-white bg-slate-800 px-2 py-0.5 rounded">Incident Data</span>
+</div>
+<!-- Surroundings -->
+<!-- Weather Station -->
+<div class="absolute top-16 left-12 group cursor-pointer z-10">
+<div class="flex items-center gap-2 bg-slate-800/80 backdrop-blur border border-slate-700 px-3 py-2 rounded-lg transition-transform hover:scale-105">
+<span class="material-symbols-outlined text-sm text-blue-400">cloud</span>
+<span class="text-[10px] font-bold text-white whitespace-nowrap">Weather Station</span>
+</div>
+</div>
+<!-- Geo-Fencing -->
+<div class="absolute bottom-16 left-12 group cursor-pointer z-10">
+<div class="flex items-center gap-2 bg-slate-800/80 backdrop-blur border border-slate-700 px-3 py-2 rounded-lg transition-transform hover:scale-105">
+<span class="material-symbols-outlined text-sm text-blue-400">location_on</span>
+<span class="text-[10px] font-bold text-white whitespace-nowrap">Geo-Fencing</span>
+</div>
+</div>
+<!-- Policy Graph (Hover State) -->
+<div class="absolute top-16 right-12 group cursor-pointer z-30">
+<div class="flex items-center gap-2 bg-primary px-3 py-2 rounded-lg ring-2 ring-white/20 shadow-lg">
+<span class="material-symbols-outlined text-sm text-white">verified_user</span>
+<span class="text-[10px] font-bold text-white whitespace-nowrap">Policy Graph</span>
+</div>
+<!-- Tooltip (Deep Tech Tooltip) -->
+<div class="absolute top-full right-0 mt-3 w-48 bg-slate-800/95 backdrop-blur-md border border-slate-700 p-3 rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-300">
+<div class="flex items-center gap-2 mb-2 pb-2 border-b border-slate-700">
+<div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+<span class="text-[9px] font-mono text-slate-400">NODE_PROPERTIES</span>
+</div>
+<pre class="text-[10px] font-mono text-blue-300 leading-tight">{
+  "node_type": "Clause",
+  "id": "4B",
+  "source": "Neo4j",
+  "trust": 0.998
+}</pre>
+</div>
+</div>
+<!-- Claim History -->
+<div class="absolute bottom-16 right-12 group cursor-pointer z-10">
+<div class="flex items-center gap-2 bg-slate-800/80 backdrop-blur border border-slate-700 px-3 py-2 rounded-lg transition-transform hover:scale-105">
+<span class="material-symbols-outlined text-sm text-blue-400">history</span>
+<span class="text-[10px] font-bold text-white whitespace-nowrap">Claim History</span>
+</div>
+</div>
+</div>
+<!-- Visualization Controls -->
+<div class="absolute bottom-3 left-3 flex gap-2">
+<button class="w-6 h-6 rounded bg-slate-800/50 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-xs">zoom_in</span>
+</button>
+<button class="w-6 h-6 rounded bg-slate-800/50 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-xs">zoom_out</span>
+</button>
+</div>
+</div>
+</div>
+<!-- AI Reasoning Chain -->
+<div class="space-y-4">
+<h4 class="text-xs font-bold uppercase tracking-widest Inter text-slate-400">Reasoning Chain</h4>
+<div class="space-y-1">
+<div class="flex gap-4 p-4 hover:bg-slate-50 transition-colors rounded-lg">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
+<div class="w-[1px] h-full bg-slate-200"></div>
+</div>
+<div>
+<p class="text-sm font-bold">Structural Failure Validation</p>
+<p class="text-xs text-on-surface-variant">Computer Vision confirmed branch detachment diameter (~14in) exceeds structural limits of asphalt shingles.</p>
+</div>
+</div>
+<div class="flex gap-4 p-4 hover:bg-slate-50 transition-colors rounded-lg">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
+<div class="w-[1px] h-full bg-slate-200"></div>
+</div>
+<div>
+<p class="text-sm font-bold">Causality Mapping</p>
+<p class="text-xs text-on-surface-variant">Temporal analysis shows water damage interior reported 2 hours post-impact. Direct causality established.</p>
+</div>
+</div>
+<div class="flex gap-4 p-4 hover:bg-slate-50 transition-colors rounded-lg">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
+</div>
+<div>
+<p class="text-sm font-bold">Payout Calibration</p>
+<p class="text-xs text-on-surface-variant">Estimated repair costs ($14,200) match regional adjuster benchmarks for Georgia Q4.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Detail Tabs/Actions -->
+<footer class="mt-12 flex justify-center">
+<div class="bg-surface-container-highest/50 backdrop-blur rounded-2xl p-2 inline-flex gap-1 shadow-sm border border-outline-variant/10">
+<button class="px-6 py-2 rounded-xl text-xs font-bold bg-white text-primary shadow-sm transition-all">Analysis Results</button>
+<button class="px-6 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-on-surface transition-all">Claimant Info</button>
+<button class="px-6 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-on-surface transition-all">Policy History</button>
+<button class="px-6 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-on-surface transition-all">Communications</button>
+</div>
+</footer>
+</div>
+</main>
+</body></html>
