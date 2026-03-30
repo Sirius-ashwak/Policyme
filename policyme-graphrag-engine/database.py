@@ -92,3 +92,24 @@ async def get_macro_graph(limit=500):
     except Exception as e:
         print(f"Database error: {e}")
         return {"nodes": [], "links": []}
+
+async def get_customer_policy_graph(customer_name: str) -> str:
+    """
+    Simulates querying Neo4j for a given customer and extracting their policy nodes.
+    Actual Cypher: 
+    MATCH (c:Customer {name: $name})-[:HAS_POLICY]->(p:Policy)-[:HAS_CLAUSE]->(clause:Clause) 
+    RETURN clause.text
+    """
+    try:
+        # Mocking the graph context for demo purposes
+        # In production use the driver.session() to yield results
+        return f"""
+        Customer: {customer_name} has Homeowners Policy (#POL-HOME-991)
+        - Section 4B: Covers rain water damage up to ₹5,00,000.
+        - Section 5A: Windshield and storm damage covered without deductible.
+        - Clause 12.3: Requires written claim within 30 days of incident.
+        - Exclusion: Acts of god normally covered, unless severe neglected maintenance.
+        """
+    except Exception as e:
+        print(f"Database error retrieving policy graph: {e}")
+        return ""

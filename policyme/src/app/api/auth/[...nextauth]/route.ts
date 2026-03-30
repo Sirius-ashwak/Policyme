@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import AzureADProvider from "next-auth/providers/azure-ad";
 import OktaProvider from "next-auth/providers/okta";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -33,6 +34,30 @@ export const authOptions: NextAuthOptions = {
                     role: profile.groups?.includes("Admin") ? "Admin" : 
                           profile.groups?.includes("Manager") ? "Manager" : "Adjuster",
                 }
+            }
+        }),
+        CredentialsProvider({
+            name: "Demo Roles",
+            credentials: {
+                role: { label: "Role", type: "text" }
+            },
+            async authorize(credentials) {
+                if (!credentials?.role) return null;
+                
+                const role = credentials.role;
+                
+                // Return a mock user based on the selected role
+                if (role === "Admin") {
+                    return { id: "1", name: "Sarah Admin", email: "admin@insurai.com", role: "Admin" };
+                } else if (role === "Adjuster") {
+                    return { id: "2", name: "John Adjuster", email: "adjuster@insurai.com", role: "Adjuster" };
+                } else if (role === "Underwriter") {
+                    return { id: "3", name: "David Underwriter", email: "underwriter@insurai.com", role: "Underwriter" };
+                } else if (role === "Customer") {
+                    return { id: "4", name: "Ramesh Customer", email: "customer@insurai.com", role: "Customer" };
+                }
+                
+                return null;
             }
         })
     ],

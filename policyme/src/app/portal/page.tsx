@@ -15,10 +15,10 @@ export default function PortalDashboard() {
                 </p>
             </header>
 
-            {/* Bento Grid Layout */}
-            <div className="grid grid-cols-1 gap-8">
+            {/* Asymmetric Grid Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                 {/* === Main Section === */}
-                <section className="space-y-8">
+                <section className="md:col-span-8 space-y-8">
                     {/* Active Policies Header */}
                     <div className="flex justify-between items-end mb-2">
                         <h2 className="text-2xl font-bold font-[Manrope]">Active Policies</h2>
@@ -118,12 +118,64 @@ export default function PortalDashboard() {
                                         </p>
                                     </div>
                                     <span className="text-xs font-[Inter] text-[var(--insurai-on-surface-variant)] bg-[var(--insurai-surface-container-highest)] px-3 py-1 rounded-full self-start">
+                                        Oct 10, 2023
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </section>
+
+                {/* === Right Side: Insights & Concierge === */}
+                <aside className="md:col-span-4 space-y-8">
+                    
+                    {/* Coverage Insight Card */}
+                    <div className="bg-[var(--insurai-surface-container-lowest)] border border-[var(--insurai-outline-variant)]/20 rounded-3xl p-8 shadow-sm">
+                        <div className="flex items-center space-x-2 text-[var(--insurai-tertiary)] mb-4">
+                            <span className="material-symbols-outlined">lightbulb</span>
+                            <span className="text-xs font-bold uppercase tracking-widest font-[Inter]">Smart Insight</span>
+                        </div>
+                        <h3 className="text-lg font-bold mb-3">Gap Identified</h3>
+                        <p className="text-[var(--insurai-on-surface-variant)] text-sm font-[Manrope] mb-6 leading-relaxed">
+                            Based on your local weather patterns in San Francisco, we recommend adding <strong>Flood Coverage</strong> to your Home Policy.
+                        </p>
+                        
+                        <div className="p-4 bg-[var(--insurai-surface-container-low)] rounded-xl mb-6 flex justify-between items-center transition-colors">
+                            <span className="text-xs font-[Inter] font-medium text-[var(--insurai-on-surface-variant)]">Estimated Add-on</span>
+                            <span className="font-bold text-[var(--primary)]">+$12.40/mo</span>
+                        </div>
+                        
+                        <button className="w-full py-3 bg-[var(--insurai-surface-container-high)] hover:bg-[var(--insurai-surface-container-highest)] text-[var(--insurai-on-surface)] font-bold rounded-xl transition-colors">
+                            Learn More
+                        </button>
+                    </div>
+
+                    {/* Map Section (Policy Location) */}
+                    <div className="bg-[var(--insurai-surface-container-lowest)] border border-[var(--insurai-outline-variant)]/20 rounded-3xl overflow-hidden shadow-sm relative group cursor-pointer hover:border-[var(--primary)]/30 transition-colors">
+                        <div className="h-48 bg-slate-200 dark:bg-slate-800 relative">
+                            {/* We use a stock image that resembles the abstract map from the mockup */}
+                            <img 
+                                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop" 
+                                alt="Map View" 
+                                className="w-full h-full object-cover grayscale opacity-70 group-hover:scale-105 group-hover:opacity-90 transition-all duration-700" 
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[var(--insurai-surface-container-lowest)] via-transparent"></div>
+                            <div className="absolute bottom-4 left-4 flex items-center space-x-2">
+                                <div className="w-8 h-8 bg-[var(--primary)] text-white rounded-full flex items-center justify-center shadow-lg">
+                                    <span className="material-symbols-outlined text-sm">location_on</span>
+                                </div>
+                                <span className="text-xs font-bold font-[Inter] bg-white/90 text-slate-800 px-3 py-1 rounded-full shadow-sm">
+                                    Primary Residence
+                                </span>
+                            </div>
+                        </div>
+                        <div className="p-6 relative z-10">
+                            <p className="text-sm font-bold text-[var(--insurai-on-surface)] mb-1">Oakwood Avenue Estate</p>
+                            <p className="text-xs font-[Manrope] text-[var(--insurai-on-surface-variant)]">1248 Oakwood Ave, San Francisco, CA</p>
+                        </div>
+                    </div>
+                    
+                </aside>
             </div>
         </div>
     );

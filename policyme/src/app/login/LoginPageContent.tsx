@@ -36,34 +36,50 @@ export default function LoginPageContent() {
                     </div>
                 )}
 
-                <div className="grid gap-4 mt-8">
+                <div className="grid grid-cols-2 gap-4 mt-8">
                     <Button 
                         variant="outline" 
-                        size="lg"
-                        className="h-14 w-full font-semibold relative flex items-center justify-center overflow-hidden group hover:bg-slate-50 dark:hover:bg-slate-900 transition-all border-slate-200 dark:border-slate-800"
-                        onClick={() => signIn("azure-ad", { callbackUrl })}
+                        size="sm"
+                        className="h-12 w-full font-semibold relative flex items-center justify-center overflow-hidden group hover:bg-slate-50 dark:hover:bg-slate-900 transition-all border-slate-200 dark:border-slate-800"
+                        onClick={() => signIn("credentials", { role: "Customer", callbackUrl: "/portal" })}
                     >
-                        <div className="absolute inset-0 w-1 bg-blue-500 left-0"></div>
-                        <img 
-                            src="https://learn.microsoft.com/en-us/entra/identity-platform/media/howto-add-branding-in-apps/ms-symbollockup_mssymbol_19.png" 
-                            alt="Microsoft" 
-                            className="mr-3 h-5 w-5 object-contain" 
-                        />
-                        Continue with Microsoft SSO
+                        <div className="absolute inset-0 w-1 bg-green-500 left-0"></div>
+                        Login as Customer
                     </Button>
 
                     <Button 
                         variant="outline" 
-                        size="lg"
-                        className="h-14 w-full font-semibold relative flex items-center justify-center overflow-hidden group hover:bg-slate-50 dark:hover:bg-slate-900 transition-all border-slate-200 dark:border-slate-800"
-                        onClick={() => signIn("okta", { callbackUrl })}
+                        size="sm"
+                        className="h-12 w-full font-semibold relative flex items-center justify-center overflow-hidden group hover:bg-slate-50 dark:hover:bg-slate-900 transition-all border-slate-200 dark:border-slate-800"
+                        onClick={() => signIn("credentials", { role: "Adjuster", callbackUrl: "/dashboard/adjuster" })}
                     >
-                        <div className="absolute inset-0 w-1 bg-blue-600 left-0"></div>
-                        <div className="mr-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#002b50]">
-                            <span className="text-[12px] font-bold text-white leading-none">O</span>
-                        </div>
-                        Continue with Okta SSO
+                        <div className="absolute inset-0 w-1 bg-blue-500 left-0"></div>
+                        Login as Adjuster
                     </Button>
+
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="h-12 w-full font-semibold relative flex items-center justify-center overflow-hidden group hover:bg-slate-50 dark:hover:bg-slate-900 transition-all border-slate-200 dark:border-slate-800"
+                        onClick={() => signIn("credentials", { role: "Underwriter", callbackUrl: "/dashboard/underwriter/metrics" })}
+                    >
+                        <div className="absolute inset-0 w-1 bg-purple-500 left-0"></div>
+                        Login as Underwriter
+                    </Button>
+                    
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="h-12 w-full font-semibold relative flex items-center justify-center overflow-hidden group hover:bg-slate-50 dark:hover:bg-slate-900 transition-all border-slate-200 dark:border-slate-800"
+                        onClick={() => signIn("credentials", { role: "Admin", callbackUrl: "/dashboard/admin" })}
+                    >
+                        <div className="absolute inset-0 w-1 bg-amber-500 left-0"></div>
+                        Login as Admin
+                    </Button>
+                </div>
+                
+                <div className="text-center mt-4">
+                    <p className="text-xs text-muted-foreground">Select a demo role to instantly sign in and view its dashboard.</p>
                 </div>
 
                 <div className="text-center text-xs text-muted-foreground/80 mt-6 pt-6 border-t border-border">

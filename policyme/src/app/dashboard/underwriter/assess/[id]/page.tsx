@@ -1,204 +1,207 @@
 "use client";
 
 import Link from "next/link";
-
-const riskFactors = [
-    {
-        title: "Modernized Fire Suppression",
-        detail: "System upgrade completed in Q3 2023. Reduces fire-related risk variance by 32% compared to regional baseline.",
-        icon: "check_circle",
-        iconColor: "text-green-600",
-        borderColor: "border-green-500",
-    },
-    {
-        title: "Geographic Exposure",
-        detail: "Asset is within a secondary flood zone. Recommended additional structural validation for basement-level coverage.",
-        icon: "warning",
-        iconColor: "text-orange-500",
-        borderColor: "border-orange-500",
-    },
-    {
-        title: "Tenant Credit Mix",
-        detail: "Current tenant roster features 80% investment-grade companies. Provides significant stability to rental income coverage.",
-        icon: "info",
-        iconColor: "text-blue-500",
-        borderColor: "border-blue-500",
-    },
-];
-
-const entityProfile = [
-    { label: "Asset Value", value: "$14.2M", valueColor: "" },
-    { label: "Occupancy Rate", value: "94%", valueColor: "" },
-    { label: "Years in Portfolio", value: "8 Years", valueColor: "" },
-    { label: "Claims History", value: "Low (1)", valueColor: "text-green-600" },
-];
+import { useEffect, useState } from "react";
 
 export default function RiskAssessorPage() {
     return (
-        <div className="pt-16 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto animate-fade-in">
-            {/* Breadcrumb & Header */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-10">
+        <div className="pt-8 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto animate-fade-in font-['Manrope']">
+            {/* Breadcrumbs & Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
                 <div>
-                    <div className="flex items-center gap-2 text-sm text-[var(--insurai-on-surface-variant)] mb-3">
-                        <Link href="/dashboard/underwriter" className="hover:text-[var(--primary)] transition-colors">
-                            Assessments
-                        </Link>
-                        <span className="material-symbols-outlined text-sm">chevron_right</span>
+                    <div className="flex items-center gap-2 text-sm font-['Inter'] text-[var(--insurai-on-surface-variant)] opacity-80 mb-2">
+                        <Link href="/dashboard/underwriter">Assessments</Link>
+                        <span className="material-symbols-outlined text-xs">chevron_right</span>
                         <span>Commercial Property</span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-extrabold tracking-tighter font-[Manrope] mb-2">
-                        APP-94281: Meridian Plaza
-                    </h1>
-                    <p className="text-sm text-[var(--insurai-on-surface-variant)]">
-                        Submission Date: Oct 24, 2023 • Applicant: Sterling Real Estate Holdings
-                    </p>
+                    <h1 className="text-4xl font-extrabold tracking-tighter mb-1 text-[var(--insurai-on-surface)]">APP-94281: Meridian Plaza</h1>
+                    <p className="text-[var(--insurai-on-surface-variant)] font-medium text-sm">Submission Date: Oct 24, 2023 • Applicant: Sterling Real Estate Holdings</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button className="px-5 py-2.5 rounded-lg border border-[var(--insurai-outline-variant)]/20 text-[var(--insurai-on-surface-variant)] font-medium hover:bg-[var(--insurai-surface-container-low)] transition-all">
+                <div className="flex gap-3 w-full md:w-auto">
+                    <button className="flex-1 md:flex-none px-6 py-2.5 rounded-lg border border-[var(--insurai-outline-variant)]/30 font-semibold text-sm hover:bg-[var(--insurai-surface-container-low)] transition-colors active:scale-95">
                         Flag Review
                     </button>
-                    <button className="px-5 py-2.5 rounded-lg primary-gradient text-white font-semibold shadow-lg hover:scale-[1.02] active:scale-95 transition-all">
+                    <button className="flex-1 md:flex-none px-6 py-2.5 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--insurai-primary-container)] text-white font-semibold text-sm shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-95 transition-all">
                         Edit Application
                     </button>
                 </div>
             </div>
 
-            {/* Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                {/* Left: Score + Profile */}
-                <div className="space-y-8">
-                    {/* AI Confidence Score */}
-                    <div className="bg-[var(--insurai-surface-container-lowest)] p-8 rounded-2xl ambient-shadow ghost-border flex flex-col items-center">
-                        <p className="text-[10px] font-bold uppercase tracking-widest font-[Inter] text-[var(--insurai-on-surface-variant)] mb-6">
-                            AI Confidence Score
-                        </p>
-                        {/* Circular Gauge */}
-                        <div className="relative w-48 h-48 mb-6">
-                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
-                                <circle
-                                    cx="60" cy="60" r="52"
-                                    stroke="var(--insurai-surface-container-high)"
-                                    strokeWidth="8"
-                                    fill="none"
-                                />
-                                <circle
-                                    cx="60" cy="60" r="52"
-                                    stroke="var(--primary)"
-                                    strokeWidth="8"
-                                    fill="none"
-                                    strokeDasharray={`${2 * Math.PI * 52}`}
-                                    strokeDashoffset={`${2 * Math.PI * 52 * (1 - 0.85)}`}
-                                    strokeLinecap="round"
-                                    className="confidence-ring"
-                                />
+            {/* Bento Grid Layout */}
+            <div className="grid grid-cols-12 gap-6">
+                
+                {/* Left Column: Risk Score & Summary */}
+                <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                    
+                    {/* AI Confidence Score Card */}
+                    <div className="bg-[var(--insurai-surface-container-lowest)] border border-[var(--insurai-outline-variant)]/10 p-8 rounded-xl flex flex-col items-center justify-center text-center shadow-sm">
+                        <span className="font-['Inter'] text-xs font-bold uppercase tracking-widest text-[var(--insurai-on-surface-variant)] mb-6">AI Confidence Score</span>
+                        
+                        <div className="relative w-48 h-48 flex items-center justify-center">
+                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 192 192">
+                                <circle className="text-[var(--insurai-surface-container-high)]" cx="96" cy="96" fill="transparent" r="88" stroke="currentColor" strokeWidth="12"></circle>
+                                <circle className="text-[var(--primary)]" cx="96" cy="96" fill="transparent" r="88" stroke="currentColor" strokeDasharray="552.92" strokeDashoffset="82.93" strokeWidth="12" strokeLinecap="round"></circle>
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <span className="text-5xl font-extrabold">85</span>
-                                <span className="text-sm text-[var(--insurai-on-surface-variant)]">/ 100</span>
+                                <span className="font-['Inter'] text-sm font-medium text-[var(--insurai-on-surface-variant)]/60">/ 100</span>
                             </div>
                         </div>
-                        <span className="text-sm font-bold text-green-600 uppercase tracking-wider">High Confidence</span>
-                        <p className="text-xs text-[var(--insurai-on-surface-variant)] text-center mt-3 max-w-xs leading-relaxed">
+                        
+                        <div className="mt-6">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">High Confidence</span>
+                        </div>
+                        <p className="mt-4 text-sm text-[var(--insurai-on-surface-variant)] leading-relaxed">
                             Analysis based on 42 historical data points and current market volatility metrics.
                         </p>
                     </div>
 
-                    {/* Entity Profile */}
-                    <div className="bg-[var(--insurai-surface-container-lowest)] p-8 rounded-2xl ambient-shadow ghost-border">
-                        <p className="text-[10px] font-bold uppercase tracking-widest font-[Inter] text-[var(--insurai-on-surface-variant)] mb-6">
-                            Entity Profile
-                        </p>
+                    {/* Rapid Details */}
+                    <div className="bg-[var(--insurai-surface-container-low)] border border-[var(--insurai-outline-variant)]/10 p-6 rounded-xl">
+                        <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-[var(--insurai-on-surface)]">Entity Profile</h3>
                         <div className="space-y-4">
-                            {entityProfile.map((item) => (
-                                <div key={item.label} className="flex justify-between items-center py-2">
-                                    <span className="text-sm text-[var(--insurai-on-surface-variant)]">{item.label}</span>
-                                    <span className={`text-sm font-bold ${item.valueColor}`}>{item.value}</span>
-                                </div>
-                            ))}
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-[var(--insurai-on-surface-variant)]">Asset Value</span>
+                                <span className="text-sm font-bold">$14.2M</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-[var(--insurai-on-surface-variant)]">Occupancy Rate</span>
+                                <span className="text-sm font-bold">94%</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-[var(--insurai-on-surface-variant)]">Years in Portfolio</span>
+                                <span className="text-sm font-bold">8 Years</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-[var(--insurai-on-surface-variant)]">Claims History</span>
+                                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Low (1)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right: Risk Factors + Recommendation */}
-                <div className="space-y-8">
-                    {/* Risk Factors Analysis */}
-                    <div className="bg-[var(--insurai-surface-container-lowest)] p-8 rounded-2xl ambient-shadow ghost-border">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold">Risk Factors Analysis</h3>
-                            <a href="#" className="text-sm text-[var(--primary)] font-semibold flex items-center gap-1 hover:underline">
-                                View Full Report
-                                <span className="material-symbols-outlined text-sm">open_in_new</span>
-                            </a>
+                {/* Right Column: Insights & Recommendations */}
+                <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
+                    
+                    {/* Main Insights Section */}
+                    <div className="bg-[var(--insurai-surface-container-lowest)] border border-[var(--insurai-outline-variant)]/10 p-8 rounded-xl shadow-sm">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-xl font-bold">Risk Factors Analysis</h2>
+                            <button className="text-[var(--primary)] text-sm font-semibold flex items-center gap-1 hover:underline">
+                                View Full Report <span className="material-symbols-outlined text-sm">open_in_new</span>
+                            </button>
                         </div>
-                        <div className="space-y-4">
-                            {riskFactors.map((factor) => (
-                                <div key={factor.title} className={`border-l-4 ${factor.borderColor} bg-[var(--insurai-surface-container-low)] p-5 rounded-r-xl`}>
-                                    <div className="flex items-start gap-3">
-                                        <span className={`material-symbols-outlined ${factor.iconColor} mt-0.5`}>{factor.icon}</span>
-                                        <div>
-                                            <h4 className="font-bold text-sm mb-1">{factor.title}</h4>
-                                            <p className="text-xs text-[var(--insurai-on-surface-variant)] leading-relaxed">{factor.detail}</p>
-                                        </div>
+                        
+                        <div className="space-y-6">
+                            {/* Factor 1 */}
+                            <div className="p-5 rounded-lg border-l-4 border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/10">
+                                <div className="flex items-start gap-4">
+                                    <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 mt-1">verified</span>
+                                    <div>
+                                        <h4 className="font-bold text-[var(--insurai-on-surface)] mb-1">Modernized Fire Suppression</h4>
+                                        <p className="text-sm text-[var(--insurai-on-surface-variant)] leading-relaxed">
+                                            System upgrade completed in Q3 2023. Reduces fire-related risk variance by 32% compared to regional baseline.
+                                        </p>
                                     </div>
                                 </div>
-                            ))}
+                            </div>
+                            
+                            {/* Factor 2 */}
+                            <div className="p-5 rounded-lg border-l-4 border-amber-500 bg-amber-50/50 dark:bg-amber-900/10">
+                                <div className="flex items-start gap-4">
+                                    <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 mt-1">warning</span>
+                                    <div>
+                                        <h4 className="font-bold text-[var(--insurai-on-surface)] mb-1">Geographic Exposure</h4>
+                                        <p className="text-sm text-[var(--insurai-on-surface-variant)] leading-relaxed">
+                                            Asset is within a secondary flood zone. Recommended additional structural validation for basement levels.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Factor 3 */}
+                            <div className="p-5 rounded-lg border-l-4 border-blue-500 bg-blue-50/50 dark:bg-blue-900/10">
+                                <div className="flex items-start gap-4">
+                                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 mt-1">info</span>
+                                    <div>
+                                        <h4 className="font-bold text-[var(--insurai-on-surface)] mb-1">Tenant Credit Mix</h4>
+                                        <p className="text-sm text-[var(--insurai-on-surface-variant)] leading-relaxed">
+                                            Current tenant roster features 80% investment-grade companies. Provides significant stability to rental income coverage.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Automated Recommendation */}
-                    <div className="bg-[var(--primary)] text-white p-8 rounded-2xl relative overflow-hidden shadow-xl">
-                        <div className="relative z-10">
-                            <h4 className="text-xl font-bold mb-2">Automated Recommendation</h4>
-                            <p className="text-blue-100 text-sm leading-relaxed mb-6">
-                                The AI Assessor recommends <strong className="text-white">Approval</strong> with a standard premium adjustment of -4.2% based on enhanced safety compliance.
-                            </p>
-                            <div className="flex gap-3">
-                                <button className="flex-1 py-3 bg-white/20 hover:bg-white/30 rounded-xl font-bold text-sm transition-colors">
+                    {/* Recommendation & Action Bar */}
+                    <div className="bg-[var(--primary)] p-8 rounded-xl text-white relative overflow-hidden shadow-xl">
+                        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div className="flex-1">
+                                <h3 className="text-2xl font-bold mb-2">Automated Recommendation</h3>
+                                <p className="text-white/80 text-sm max-w-lg leading-relaxed">
+                                    The AI Assessor recommends <strong className="text-white font-bold">Approval</strong> with a standard premium adjustment of -4.2% based on enhanced safety compliance.
+                                </p>
+                            </div>
+                            <div className="flex gap-4 w-full md:w-auto">
+                                <button className="flex-1 md:flex-none px-8 py-3 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition-all border border-white/20">
                                     Reject
                                 </button>
-                                <button className="flex-1 py-3 bg-white text-[var(--primary)] rounded-xl font-bold text-sm shadow-sm hover:bg-opacity-90 transition-colors">
+                                <button className="flex-1 md:flex-none px-8 py-3 rounded-lg bg-white text-[var(--primary)] font-bold shadow-xl shadow-black/10 hover:scale-105 active:scale-95 transition-all">
                                     Approve Policy
                                 </button>
                             </div>
                         </div>
-                        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[var(--insurai-primary-container)] rounded-full blur-3xl opacity-50" />
+                        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[var(--insurai-primary-container)] rounded-full blur-3xl opacity-50 pointer-events-none" />
                     </div>
 
-                    {/* Attached Documents */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-[var(--insurai-surface-container-lowest)] p-4 rounded-xl ghost-border flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[var(--insurai-surface-container-low)] rounded-lg flex items-center justify-center">
-                                <span className="material-symbols-outlined text-[var(--insurai-on-surface-variant)]">photo_library</span>
+                    {/* Supporting Documentation Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-[var(--insurai-surface-container-low)] border border-[var(--insurai-outline-variant)]/10 p-6 rounded-xl flex items-center gap-4 group cursor-pointer hover:bg-[var(--insurai-surface-container-high)] transition-colors">
+                            <div className="h-12 w-12 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-[var(--primary)] shadow-sm">
+                                <span className="material-symbols-outlined">photo_library</span>
                             </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-bold">Site Survey Photos</p>
+                            <div>
+                                <h5 className="font-bold text-sm text-[var(--insurai-on-surface)]">Site Survey Photos</h5>
                                 <p className="text-xs text-[var(--insurai-on-surface-variant)]">12 Files • Uploaded 2d ago</p>
                             </div>
-                            <span className="material-symbols-outlined text-[var(--insurai-on-surface-variant)] text-lg cursor-pointer hover:text-[var(--primary)]">download</span>
+                            <span className="material-symbols-outlined ml-auto text-[var(--insurai-on-surface-variant)]/40 group-hover:text-[var(--primary)] transition-colors">download</span>
                         </div>
-                        <div className="bg-[var(--insurai-surface-container-lowest)] p-4 rounded-xl ghost-border flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[var(--insurai-surface-container-low)] rounded-lg flex items-center justify-center">
-                                <span className="material-symbols-outlined text-[var(--insurai-on-surface-variant)]">description</span>
+                        
+                        <div className="bg-[var(--insurai-surface-container-low)] border border-[var(--insurai-outline-variant)]/10 p-6 rounded-xl flex items-center gap-4 group cursor-pointer hover:bg-[var(--insurai-surface-container-high)] transition-colors">
+                            <div className="h-12 w-12 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-[var(--primary)] shadow-sm">
+                                <span className="material-symbols-outlined">summarize</span>
                             </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-bold">Financial Audit 2023</p>
+                            <div>
+                                <h5 className="font-bold text-sm text-[var(--insurai-on-surface)]">Financial Audit 2023</h5>
                                 <p className="text-xs text-[var(--insurai-on-surface-variant)]">PDF • 4.2 MB</p>
                             </div>
-                            <span className="material-symbols-outlined text-[var(--insurai-on-surface-variant)] text-lg cursor-pointer hover:text-[var(--primary)]">download</span>
+                            <span className="material-symbols-outlined ml-auto text-[var(--insurai-on-surface-variant)]/40 group-hover:text-[var(--primary)] transition-colors">download</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Location Context */}
-            <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold">Location Context</h3>
-                    <span className="text-sm text-[var(--insurai-on-surface-variant)]">452 Meridian Avenue, San Francisco, CA</span>
-                </div>
-                <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded-2xl overflow-hidden relative">
-                    <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-slate-500 text-6xl">map</span>
+            {/* Map Section */}
+            <div className="mt-12">
+                <div className="bg-[var(--insurai-surface-container-lowest)] border border-[var(--insurai-outline-variant)]/10 p-8 rounded-xl overflow-hidden shadow-sm">
+                    <div className="flex justify-between items-center mb-6 px-2">
+                        <h2 className="text-xl font-bold text-[var(--insurai-on-surface)]">Location Context</h2>
+                        <span className="text-sm font-medium text-[var(--insurai-on-surface-variant)]">452 Meridian Avenue, San Francisco, CA</span>
+                    </div>
+                    
+                    <div className="h-[300px] w-full bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden relative group">
+                        <img 
+                            className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" 
+                            alt="Detailed aerial street map view of an urban financial district" 
+                            src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1200&auto=format&fit=crop"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="relative">
+                                <div className="w-4 h-4 bg-[var(--primary)] rounded-full animate-ping opacity-75 absolute"></div>
+                                <div className="w-4 h-4 bg-[var(--primary)] rounded-full border-2 border-white relative z-10 shadow-lg"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

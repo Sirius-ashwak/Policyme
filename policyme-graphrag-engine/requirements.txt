@@ -67,3 +67,5 @@ uvicorn==0.41.0
 xxhash==3.6.0
 aiokafka==0.13.0
 PyMuPDF
+python-multipart
+google-genai

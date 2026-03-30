@@ -18,7 +18,7 @@ export default function NewApplicationPage() {
         <div className="min-h-screen bg-[var(--insurai-surface)]">
             <Navbar />
 
-            <main className="pt-24 pb-16 px-6 max-w-7xl mx-auto animate-fade-in">
+            <main className="pt-24 pb-20 px-6 max-w-5xl mx-auto animate-fade-in">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-10 gap-4">
                     <div>
@@ -248,12 +248,15 @@ export default function NewApplicationPage() {
                         </div>
 
                         {/* Preview Card */}
-                        <div className="bg-slate-800 rounded-2xl overflow-hidden">
-                            <div className="h-40 bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center relative">
-                                <span className="material-symbols-outlined text-slate-600 text-6xl">directions_car</span>
-                                <div className="absolute bottom-3 left-3">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Coming Next</span>
-                                </div>
+                        <div className="rounded-xl overflow-hidden h-48 relative shadow-lg">
+                            <img 
+                                className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" 
+                                alt="front view of a modern electric car parked in a showroom" 
+                                src="https://images.unsplash.com/photo-1560958089-b8a1929cea89?q=80&w=600&auto=format&fit=crop"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
+                                <span className="text-white text-[10px] font-bold tracking-widest uppercase font-['Inter'] mb-1">Coming Next</span>
+                                <h4 className="text-white font-bold text-lg">Custom Coverage Plans</h4>
                             </div>
                         </div>
                     </aside>
