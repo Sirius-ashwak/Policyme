@@ -8,15 +8,16 @@ from llm import generate_answer_with_context, evaluate_underwriting_risk
 from gemini_voice import process_voice_claim
 import os
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
 
-app = FastAPI(title="PolicyMe GraphRAG Engine")
+app = FastAPI(title="PolicyMe GraphRAG Engine — Gemini 2.5 Flash")
 
 # Configure CORS for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "*"], # Allow frontend port
+    allow_origins=["http://localhost:3000", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,24 +45,33 @@ class QueryResponse(BaseModel):
     confidence: float
     extracted_data: Dict[str, Any] = {}
 
-from langchain_ollama import OllamaEmbeddings
+# Initialize Gemini client for embeddings
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Initialize the embedder once
-embedder = OllamaEmbeddings(
-    model="llama3.2:1b",
-    base_url="http://localhost:11434"
-)
+
+async def get_embedding(text: str) -> List[float]:
+    """Get embedding vector from Gemini text-embedding-004."""
+    try:
+        response = gemini_client.models.embed_content(
+            model="text-embedding-004",
+            contents=text,
+        )
+        return response.embeddings[0].values
+    except Exception as e:
+        print(f"Gemini Embedding Error: {e}")
+        return []
+
 
 @app.post("/graphrag/query", response_model=QueryResponse)
 async def process_graphrag_query(request: QueryRequest):
     try:
-        # Step 0: Embed query
-        query_embedding = await embedder.aembed_query(request.query)
+        # Step 0: Embed query using Gemini
+        query_embedding = await get_embedding(request.query)
         
-        # Step 1: Query Neo4j Graph for relevant clauses and multi-hop context
+        # Step 1: Query Neo4j Graph for relevant clauses
         context_data = await search_neo4j_graph(request.query)
         
-        # Step 2: Generate response using OpenAI GPT-4 with retrieved context
+        # Step 2: Generate response using Gemini 2.5 Flash
         result = await generate_answer_with_context(
             request.query, 
             context_data, 
@@ -96,18 +106,10 @@ async def handle_voice_claim(
     target_language: str = Form("Tamil")
 ):
     try:
-        # Read raw bytes from incoming audio
         audio_bytes = await audio.read()
-        
-        # 1. Fetch policy graph context representing the clauses from auraDb (mocked)
         graph_context = await get_customer_policy_graph(customer_name)
-        
-        # 2. GraphRAG Analysis via Multimodal Gemini 2.0 Flash
-        # Transcribes audio, retrieves clauses, and formats response in target language
         analysis_result = await process_voice_claim(audio_bytes, customer_name, graph_context, target_language)
-        
         return analysis_result
-        
     except Exception as e:
         print(f"Error handling voice claim: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -118,12 +120,34 @@ class UnderwriteRequest(BaseModel):
 @app.post("/api/underwrite")
 async def handle_underwrite(request: UnderwriteRequest):
     try:
-        # Run the local LLM to assess risk
         risk_assessment = await evaluate_underwriting_risk(request.customer_data)
         return risk_assessment
     except Exception as e:
         print(f"Error handling underwrite logic: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint to verify Gemini API connectivity."""
+    try:
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=["ping"],
+            config={"max_output_tokens": 5},
+        )
+        return {
+            "status": "healthy",
+            "gemini": "connected",
+            "model": "gemini-2.5-flash",
+            "response": response.text
+        }
+    except Exception as e:
+        return {
+            "status": "degraded",
+            "gemini": f"error: {str(e)}",
+        }
+
 
 if __name__ == "__main__":
     import uvicorn

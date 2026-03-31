@@ -33,13 +33,19 @@ except ImportError:
 
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings
+from google import genai
 from database import insert_document_and_chunks
 
-embedder = OllamaEmbeddings(
-    model="llama3.2:1b",
-    base_url="http://localhost:11434"
-)
+# Gemini Embeddings
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+async def get_embedding(text: str):
+    """Get embedding from Gemini text-embedding-004."""
+    response = gemini_client.models.embed_content(
+        model="text-embedding-004",
+        contents=text,
+    )
+    return response.embeddings[0].values
 
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=500,
@@ -73,7 +79,7 @@ async def process_document_event(event_data: dict):
         logger.info(f"   📊 Generating embedding for Chunk {i+1}/{len(chunks)}: {len(chunk_text)} chars")
         # 2. Embedding
         try:
-            embedding = await embedder.aembed_query(chunk_text)
+            embedding = await get_embedding(chunk_text)
             chunk_data_list.append({
                 "chunk_id": f"{doc_id}-chunk-{i}",
                 "text": chunk_text,
