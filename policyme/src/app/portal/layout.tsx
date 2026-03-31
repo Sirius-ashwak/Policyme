@@ -3,7 +3,6 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Navbar } from "@/components/layout/Navbar";
 import { VoiceAssistant } from "@/components/VoiceAssistant";
-import { VoiceClaimButton } from "@/components/ui/VoiceClaimButton";
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -18,11 +17,6 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
             {/* Global Voice Assistant */}
             <VoiceAssistant />
-
-            {/* Multilingual Voice Claim FAB */}
-            <div className="fixed bottom-24 right-8 z-50 hidden md:flex items-center justify-center">
-                <VoiceClaimButton />
-            </div>
 
             {/* Mobile Bottom Navigation */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center h-20 px-4 z-50 pb-4">
