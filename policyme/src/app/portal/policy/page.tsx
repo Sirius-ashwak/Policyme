@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { FileText, Shield, Calendar, DollarSign, CheckCircle2, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const policies = [
     {
@@ -41,12 +42,13 @@ const policies = [
 
 export default function MyPolicyPage() {
     const [expandedPolicy, setExpandedPolicy] = useState<string | null>(policies[0].id);
+    const { t } = useLanguage();
 
     return (
         <div className="space-y-8">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                <h1 className="text-3xl font-bold text-slate-900">My Policies</h1>
-                <p className="text-slate-500 mt-1">View your active insurance policies and coverage details.</p>
+                <h1 className="text-3xl font-bold text-slate-900">{t("policy.title")}</h1>
+                <p className="text-slate-500 mt-1">{t("policy.subtitle")}</p>
             </motion.div>
 
             <div className="space-y-4">
@@ -83,7 +85,7 @@ export default function MyPolicyPage() {
                                 <div className="flex items-center gap-4">
                                     <div className="text-right hidden sm:block">
                                         <p className="text-lg font-bold text-slate-900">{policy.premium}</p>
-                                        <p className="text-xs text-slate-400">Monthly Premium</p>
+                                        <p className="text-xs text-slate-400">{t("policy.monthly_premium")}</p>
                                     </div>
                                     <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                                 </div>
@@ -116,14 +118,14 @@ export default function MyPolicyPage() {
 
                                     {/* Coverage Table */}
                                     <div className="p-5">
-                                        <h4 className="text-sm font-semibold text-slate-700 mb-3">Coverage Details</h4>
+                                        <h4 className="text-sm font-semibold text-slate-700 mb-3">{t("policy.coverage_details")}</h4>
                                         <div className="rounded-xl border border-slate-200 overflow-hidden">
                                             <table className="w-full text-sm">
                                                 <thead>
                                                     <tr className="bg-slate-50 text-slate-500">
-                                                        <th className="text-left px-4 py-2.5 font-medium">Coverage Item</th>
-                                                        <th className="text-left px-4 py-2.5 font-medium">Limit</th>
-                                                        <th className="text-left px-4 py-2.5 font-medium">Deductible</th>
+                                                        <th className="text-left px-4 py-2.5 font-medium">{t("policy.coverage_item")}</th>
+                                                        <th className="text-left px-4 py-2.5 font-medium">{t("policy.limit")}</th>
+                                                        <th className="text-left px-4 py-2.5 font-medium">{t("policy.deductible")}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>

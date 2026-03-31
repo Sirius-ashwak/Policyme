@@ -1,22 +1,28 @@
 "use client";
 
+import { useLanguage } from "@/contexts/LanguageContext";
+
 export default function SettingsPage() {
+    const { t } = useLanguage();
+
+    const settings = [
+        { icon: "lock", title: t("settings.password"), desc: t("settings.password_desc"), action: t("settings.update") },
+        { icon: "security", title: t("settings.twofa"), desc: t("settings.twofa_desc"), action: t("settings.manage") },
+        { icon: "notifications", title: t("settings.notifications"), desc: t("settings.notifications_desc"), action: t("settings.configure") },
+        { icon: "visibility", title: t("settings.privacy"), desc: t("settings.privacy_desc"), action: t("settings.review") },
+    ];
+
     return (
         <div className="animate-fade-in">
             <header className="mb-12">
-                <h1 className="text-4xl font-extrabold tracking-tight font-[Manrope] mb-2">Security Settings</h1>
+                <h1 className="text-4xl font-extrabold tracking-tight font-[Manrope] mb-2">{t("settings.title")}</h1>
                 <p className="text-[var(--insurai-on-surface-variant)] text-lg max-w-2xl leading-relaxed">
-                    Manage your account security, privacy preferences, and notification settings.
+                    {t("settings.subtitle")}
                 </p>
             </header>
 
             <div className="space-y-6 max-w-2xl">
-                {[
-                    { icon: "lock", title: "Password", desc: "Last changed 30 days ago", action: "Update" },
-                    { icon: "security", title: "Two-Factor Authentication", desc: "Enabled via Authenticator App", action: "Manage" },
-                    { icon: "notifications", title: "Notification Preferences", desc: "Email & SMS alerts active", action: "Configure" },
-                    { icon: "visibility", title: "Privacy Settings", desc: "Data sharing preferences", action: "Review" },
-                ].map((item) => (
+                {settings.map((item) => (
                     <div key={item.title} className="bg-[var(--insurai-surface-container-lowest)] p-6 rounded-2xl ambient-shadow ghost-border flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 bg-[var(--insurai-surface-container-low)] rounded-xl flex items-center justify-center text-[var(--insurai-on-surface-variant)]">

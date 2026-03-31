@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function PortalDashboard() {
+    const { t } = useLanguage();
     return (
         <div className="animate-fade-in">
             {/* Welcome Header */}
             <header className="mb-12">
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[var(--insurai-on-surface)] mb-2 font-[Manrope]">
-                    Hello, Sarah Mitchell
+                    {t("dash.welcome")}, Sarah Mitchell
                 </h1>
                 <p className="text-[var(--insurai-on-surface-variant)] text-lg max-w-2xl font-[Manrope] leading-relaxed">
                     Your portfolio is up to date. You have one claim under review and your premium for the Home Policy is due in 12 days.
@@ -21,9 +23,9 @@ export default function PortalDashboard() {
                 <section className="md:col-span-8 space-y-8">
                     {/* Active Policies Header */}
                     <div className="flex justify-between items-end mb-2">
-                        <h2 className="text-2xl font-bold font-[Manrope]">Active Policies</h2>
+                        <h2 className="text-2xl font-bold font-[Manrope]">{t("dash.active_policies")}</h2>
                         <button className="text-[var(--primary)] font-[Inter] text-sm font-semibold hover:underline">
-                            View all
+                            {t("dash.view_all")}
                         </button>
                     </div>
 
@@ -36,7 +38,7 @@ export default function PortalDashboard() {
                                     <span className="material-symbols-outlined">directions_car</span>
                                 </div>
                                 <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold tracking-widest uppercase">
-                                    Active
+                                    {t("dash.status.active")}
                                 </span>
                             </div>
                             <h3 className="text-xl font-bold mb-1">Tesla Model 3</h3>
@@ -45,7 +47,7 @@ export default function PortalDashboard() {
                             </p>
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-[var(--insurai-on-surface-variant)]">Total Coverage</span>
+                                    <span className="text-[var(--insurai-on-surface-variant)]">{t("dash.total_coverage")}</span>
                                     <span className="font-bold">$100,000</span>
                                 </div>
                                 <div className="w-full bg-[var(--insurai-surface-container-high)] h-1.5 rounded-full overflow-hidden">
@@ -61,7 +63,7 @@ export default function PortalDashboard() {
                                     <span className="material-symbols-outlined">home</span>
                                 </div>
                                 <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold tracking-widest uppercase">
-                                    Active
+                                    {t("dash.status.active")}
                                 </span>
                             </div>
                             <h3 className="text-xl font-bold mb-1">Main Residence</h3>
@@ -70,7 +72,7 @@ export default function PortalDashboard() {
                             </p>
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-[var(--insurai-on-surface-variant)]">Premium Due</span>
+                                    <span className="text-[var(--insurai-on-surface-variant)]">{t("dash.premium_due")}</span>
                                     <span className="font-bold text-[var(--insurai-error)]">Oct 24, 2023</span>
                                 </div>
                                 <div className="w-full bg-[var(--insurai-surface-container-high)] h-1.5 rounded-full overflow-hidden">
@@ -82,7 +84,7 @@ export default function PortalDashboard() {
 
                     {/* Recent Activity Timeline */}
                     <div className="mt-12 bg-[var(--insurai-surface-container-low)] rounded-3xl p-8">
-                        <h2 className="text-2xl font-bold font-[Manrope] mb-8">Recent Activity</h2>
+                        <h2 className="text-2xl font-bold font-[Manrope] mb-8">{t("dash.recent_activity")}</h2>
                         <div className="space-y-8 relative before:content-[''] before:absolute before:left-[1.2rem] before:top-2 before:bottom-2 before:w-px before:bg-[var(--insurai-outline-variant)]/30">
                             {/* Claim Progress */}
                             <div className="relative pl-12">
@@ -93,7 +95,7 @@ export default function PortalDashboard() {
                                     <div>
                                         <h4 className="font-bold text-lg">Active Claim: Windshield Damage</h4>
                                         <p className="text-[var(--insurai-on-surface-variant)] text-sm mt-1">
-                                            Status: <span className="font-semibold text-[var(--primary)]">In Review</span> • Case #CL-90122
+                                            Status: <span className="font-semibold text-[var(--primary)]">{t("dash.status.review")}</span> • Case #CL-90122
                                         </p>
                                     </div>
                                     <span className="text-xs font-[Inter] text-[var(--insurai-on-surface-variant)] bg-[var(--insurai-surface-container-highest)] px-3 py-1 rounded-full self-start">
@@ -114,7 +116,7 @@ export default function PortalDashboard() {
                                     <div>
                                         <h4 className="font-bold text-lg">New Application: Pet Insurance</h4>
                                         <p className="text-[var(--insurai-on-surface-variant)] text-sm mt-1">
-                                            Status: <span className="font-semibold text-[var(--insurai-secondary)]">Pending Underwriting</span>
+                                            Status: <span className="font-semibold text-[var(--insurai-secondary)]">{t("dash.status.pending")}</span>
                                         </p>
                                     </div>
                                     <span className="text-xs font-[Inter] text-[var(--insurai-on-surface-variant)] bg-[var(--insurai-surface-container-highest)] px-3 py-1 rounded-full self-start">
@@ -133,20 +135,20 @@ export default function PortalDashboard() {
                     <div className="bg-[var(--insurai-surface-container-lowest)] border border-[var(--insurai-outline-variant)]/20 rounded-3xl p-8 shadow-sm">
                         <div className="flex items-center space-x-2 text-[var(--insurai-tertiary)] mb-4">
                             <span className="material-symbols-outlined">lightbulb</span>
-                            <span className="text-xs font-bold uppercase tracking-widest font-[Inter]">Smart Insight</span>
+                            <span className="text-xs font-bold uppercase tracking-widest font-[Inter]">{t("dash.smart_insight")}</span>
                         </div>
-                        <h3 className="text-lg font-bold mb-3">Gap Identified</h3>
+                        <h3 className="text-lg font-bold mb-3">{t("dash.gap_identified")}</h3>
                         <p className="text-[var(--insurai-on-surface-variant)] text-sm font-[Manrope] mb-6 leading-relaxed">
                             Based on your local weather patterns in San Francisco, we recommend adding <strong>Flood Coverage</strong> to your Home Policy.
                         </p>
                         
                         <div className="p-4 bg-[var(--insurai-surface-container-low)] rounded-xl mb-6 flex justify-between items-center transition-colors">
-                            <span className="text-xs font-[Inter] font-medium text-[var(--insurai-on-surface-variant)]">Estimated Add-on</span>
+                            <span className="text-xs font-[Inter] font-medium text-[var(--insurai-on-surface-variant)]">{t("dash.estimated_addon")}</span>
                             <span className="font-bold text-[var(--primary)]">+$12.40/mo</span>
                         </div>
                         
                         <button className="w-full py-3 bg-[var(--insurai-surface-container-high)] hover:bg-[var(--insurai-surface-container-highest)] text-[var(--insurai-on-surface)] font-bold rounded-xl transition-colors">
-                            Learn More
+                            {t("dash.learn_more")}
                         </button>
                     </div>
 

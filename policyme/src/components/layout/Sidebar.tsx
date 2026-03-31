@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type NavItem = {
     name: string;
@@ -15,21 +16,27 @@ type SidebarSection = {
     items: NavItem[];
 };
 
-const roleSidebars: Record<string, { header: { label: string; subtitle: string }; sections: SidebarSection[]; cta?: { label: string; icon: string; href: string } }> = {
+type RoleConfig = {
+    header: { label: string; subtitle: string };
+    sections: SidebarSection[];
+    cta?: { label: string; icon: string; href: string };
+};
+
+const getRoleSidebars = (t: (key: string) => string): Record<string, RoleConfig> => ({
     portal: {
         header: { label: "Membership Status", subtitle: "Premium Member" },
         sections: [
             {
                 items: [
-                    { name: "Overview", href: "/portal", icon: "dashboard" },
-                    { name: "Claims History", href: "/portal/claims", icon: "description" },
-                    { name: "Policy Vault", href: "/portal/policy", icon: "folder_shared" },
-                    { name: "Billing & Payments", href: "/portal/billing", icon: "payments" },
-                    { name: "Security Settings", href: "/portal/settings", icon: "settings" },
+                    { name: t("sidebar.home"), href: "/portal", icon: "dashboard" },
+                    { name: t("sidebar.claims"), href: "/portal/claims", icon: "description" },
+                    { name: t("sidebar.policies"), href: "/portal/policy", icon: "folder_shared" },
+                    { name: t("sidebar.billing"), href: "/portal/billing", icon: "payments" },
+                    { name: t("sidebar.settings"), href: "/portal/settings", icon: "settings" },
                 ],
             },
         ],
-        cta: { label: "File New Claim", icon: "add", href: "/portal/submit" },
+        cta: { label: t("sidebar.submit"), icon: "add", href: "/portal/submit" },
     },
     adjuster: {
         header: { label: "Deep-Tech Workspace", subtitle: "Adjuster View" },
@@ -88,7 +95,7 @@ const roleSidebars: Record<string, { header: { label: string; subtitle: string }
             },
         ],
     },
-};
+});
 
 function detectRole(pathname: string): string {
     if (pathname.startsWith("/portal")) return "portal";
@@ -101,8 +108,9 @@ function detectRole(pathname: string): string {
 
 export function Sidebar() {
     const pathname = usePathname();
+    const { t } = useLanguage();
     const role = detectRole(pathname);
-    const config = roleSidebars[role];
+    const config = getRoleSidebars(t)[role];
 
     if (!config) return null;
 

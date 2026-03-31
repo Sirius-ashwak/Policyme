@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-const steps = [
-    { label: "Incident Details", key: "details" },
-    { label: "Evidence", key: "evidence" },
-    { label: "Review", key: "review" },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function SubmitClaimPage() {
     const [currentStep, setCurrentStep] = useState(0);
+    const { t } = useLanguage();
+
+    const steps = [
+        { label: t("submit.step_details"), key: "details" },
+        { label: t("submit.step_evidence"), key: "evidence" },
+        { label: t("submit.step_review"), key: "review" },
+    ];
 
     return (
         <div className="min-h-screen bg-[var(--insurai-surface)]">
@@ -20,7 +22,7 @@ export default function SubmitClaimPage() {
                     <div className="flex items-center gap-4">
                         <Link href="/portal" className="flex items-center gap-2 text-[var(--primary)] hover:opacity-80 transition-opacity">
                             <span className="material-symbols-outlined">arrow_back</span>
-                            <span className="font-['Inter'] text-sm font-medium">Dashboard</span>
+                            <span className="font-['Inter'] text-sm font-medium">{t("submit.dashboard")}</span>
                         </Link>
                     </div>
                     <div className="flex items-center gap-2">
@@ -40,7 +42,7 @@ export default function SubmitClaimPage() {
                     {/* Step Indicator */}
                     <div className="mb-12">
                         <div className="flex items-center justify-between mb-4">
-                            <h1 className="text-2xl font-extrabold tracking-tight text-[var(--insurai-on-surface)]">File New Claim</h1>
+                            <h1 className="text-2xl font-extrabold tracking-tight text-[var(--insurai-on-surface)]">{t("submit.title")}</h1>
                             <span className="font-['Inter'] text-xs font-semibold text-[var(--primary)] bg-[var(--insurai-primary-fixed)]/30 px-3 py-1 rounded-full">
                                 Step {currentStep + 1} of {steps.length}
                             </span>
@@ -77,14 +79,14 @@ export default function SubmitClaimPage() {
                         <div className={currentStep === 0 ? "block" : "hidden"}>
                             <section className="space-y-6">
                                 <div className="space-y-1">
-                                    <h2 className="text-lg font-bold">Incident Details</h2>
-                                    <p className="text-[var(--insurai-on-surface-variant)] text-sm">Tell us what happened with your protected asset.</p>
+                                    <h2 className="text-lg font-bold">{t("submit.incident_details")}</h2>
+                                    <p className="text-[var(--insurai-on-surface-variant)] text-sm">{t("submit.incident_subtitle")}</p>
                                 </div>
                                 <div className="grid grid-cols-1 gap-6">
                                     
                                     {/* Incident Type */}
                                     <div className="space-y-2">
-                                        <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">Type of Claim</label>
+                                        <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">{t("submit.claim_type")}</label>
                                         <div className="relative">
                                             <select className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 appearance-none font-medium text-[var(--insurai-on-surface)] cursor-pointer focus:ring-4 focus:ring-[var(--primary)]/10">
                                                 <option>Select incident type</option>
@@ -103,13 +105,13 @@ export default function SubmitClaimPage() {
                                     {/* Date and Time */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">Date of Incident</label>
+                                            <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">{t("submit.date_of_incident")}</label>
                                             <div className="relative">
                                                 <input type="date" className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] focus:ring-4 focus:ring-[var(--primary)]/10" />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">Approx. Time</label>
+                                            <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">{t("submit.approx_time")}</label>
                                             <div className="relative">
                                                 <input type="time" className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] focus:ring-4 focus:ring-[var(--primary)]/10" />
                                             </div>
@@ -118,7 +120,7 @@ export default function SubmitClaimPage() {
                                     
                                     {/* Description */}
                                     <div className="space-y-2">
-                                        <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">Incident Description</label>
+                                        <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">{t("submit.description")}</label>
                                         <textarea 
                                             className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] resize-none placeholder:text-[var(--insurai-on-surface-variant)]/50 focus:ring-4 focus:ring-[var(--primary)]/10" 
                                             placeholder="Provide a detailed account of the events leading up to the incident..." 
@@ -131,8 +133,8 @@ export default function SubmitClaimPage() {
                             {/* Section 2: File Upload */}
                             <section className="space-y-6 mt-10">
                                 <div className="space-y-1">
-                                    <h2 className="text-lg font-bold">Supporting Evidence</h2>
-                                    <p className="text-[var(--insurai-on-surface-variant)] text-sm">Upload photos of the damage or relevant documents.</p>
+                                    <h2 className="text-lg font-bold">{t("submit.evidence_title")}</h2>
+                                    <p className="text-[var(--insurai-on-surface-variant)] text-sm">{t("submit.evidence_subtitle")}</p>
                                 </div>
                                 
                                 <div className="group relative">
@@ -140,10 +142,10 @@ export default function SubmitClaimPage() {
                                         <div className="w-16 h-16 rounded-full bg-[var(--insurai-primary-container)]/10 flex items-center justify-center text-[var(--primary)] mb-4 group-hover:scale-105 transition-transform">
                                             <span className="material-symbols-outlined text-3xl">cloud_upload</span>
                                         </div>
-                                        <p className="font-semibold mb-1">Drag and drop files here</p>
-                                        <p className="text-[var(--insurai-on-surface-variant)] text-xs mb-6">PNG, JPG or PDF up to 10MB each</p>
+                                        <p className="font-semibold mb-1">{t("submit.drag_drop")}</p>
+                                        <p className="text-[var(--insurai-on-surface-variant)] text-xs mb-6">{t("submit.file_types")}</p>
                                         <button className="bg-white dark:bg-slate-800 border border-[var(--insurai-outline-variant)]/20 px-6 py-2.5 rounded-lg font-['Inter'] text-sm font-semibold shadow-sm group-hover:-translate-y-0.5 active:scale-95 transition-all text-slate-700 dark:text-slate-200">
-                                            Browse Files
+                                            {t("submit.browse_files")}
                                         </button>
                                     </div>
                                     <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" />
@@ -176,7 +178,7 @@ export default function SubmitClaimPage() {
                         {/* Step 2/3 Placeholders for interactivity */}
                         <div className={currentStep === 1 ? "block" : "hidden"}>
                              <div className="space-y-6">
-                                <h2 className="text-lg font-bold">Additional Evidence</h2>
+                                <h2 className="text-lg font-bold">{t("submit.additional_evidence")}</h2>
                                 <div className="border border-[var(--insurai-outline-variant)]/20 rounded-xl p-8 bg-[var(--insurai-surface-container-lowest)]">
                                      <p className="text-sm text-[var(--insurai-on-surface-variant)] text-center">More documents can be specified here.</p>
                                 </div>
@@ -184,7 +186,7 @@ export default function SubmitClaimPage() {
                         </div>
                         <div className={currentStep === 2 ? "block" : "hidden"}>
                              <div className="space-y-6">
-                                <h2 className="text-lg font-bold">Review Claim</h2>
+                                <h2 className="text-lg font-bold">{t("submit.review_claim")}</h2>
                                 <div className="border border-[var(--insurai-outline-variant)]/20 rounded-xl p-8 bg-[var(--insurai-surface-container-lowest)]">
                                      <h3 className="font-bold border-b border-[var(--insurai-surface-container-high)] pb-4 mb-4">Summary</h3>
                                      <div className="flex justify-between text-sm py-2">
@@ -201,20 +203,20 @@ export default function SubmitClaimPage() {
                                 onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
                                 className="px-6 py-4 font-['Inter'] text-sm font-bold text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors flex items-center gap-2"
                             >
-                                {currentStep === 0 ? "Save for later" : "Back"}
+                                {currentStep === 0 ? t("submit.save_for_later") : t("submit.back")}
                             </button>
                             <button 
                                 onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
                                 className="bg-gradient-to-br from-[var(--primary)] to-[var(--insurai-primary-container)] px-10 py-4 rounded-xl text-sm font-bold text-white shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-95 transition-all"
                             >
-                                {currentStep === steps.length - 1 ? "Submit Claim" : "Continue"}
+                                {currentStep === steps.length - 1 ? t("submit.submit_claim") : t("submit.continue")}
                             </button>
                         </div>
                         
                         {/* Security/Trust Badge */}
                         <div className="flex items-center justify-center gap-2 pt-8 opacity-40">
                             <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest font-['Inter']">End-to-End Encrypted Secure Submission</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest font-['Inter']">{t("submit.encrypted")}</span>
                         </div>
                     </div>
                 </div>

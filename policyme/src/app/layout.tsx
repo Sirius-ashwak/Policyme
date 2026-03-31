@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import SessionProvider from "@/components/providers/SessionProvider";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,9 +54,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SessionProvider>
-            <TooltipProvider>
-              {children}
-            </TooltipProvider>
+            <LanguageProvider>
+              <TooltipProvider>
+                {children}
+              </TooltipProvider>
+            </LanguageProvider>
           </SessionProvider>
         </ThemeProvider>
       </body>

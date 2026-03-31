@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function Navbar() {
     const { data: session, status } = useSession();
     const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
+    const { t } = useLanguage();
 
     useEffect(() => {
         setMounted(true);
@@ -22,17 +25,17 @@ export function Navbar() {
     const isAdmin = pathname.startsWith("/dashboard/admin");
 
     const roleLinks = [
-        { label: "Portal", href: "/portal", active: isPortal },
-        { label: "Underwriter", href: "/dashboard/underwriter", active: isUnderwriter },
-        { label: "Adjuster", href: "/dashboard/adjuster", active: isAdjuster },
+        { label: t("nav.portal"), href: "/portal", active: isPortal },
+        { label: t("nav.underwriter"), href: "/dashboard/underwriter", active: isUnderwriter },
+        { label: t("nav.adjuster"), href: "/dashboard/adjuster", active: isAdjuster },
     ];
 
     // Add Manager/Admin links based on session role
     if (mounted && session?.user?.role === "Manager" || session?.user?.role === "Admin") {
-        roleLinks.push({ label: "Manager", href: "/dashboard/manager", active: isManager });
+        roleLinks.push({ label: t("nav.manager"), href: "/dashboard/manager", active: isManager });
     }
     if (mounted && session?.user?.role === "Admin") {
-        roleLinks.push({ label: "Admin", href: "/dashboard/admin", active: isAdmin });
+        roleLinks.push({ label: t("nav.admin"), href: "/dashboard/admin", active: isAdmin });
     }
 
     return (
@@ -69,6 +72,9 @@ export function Navbar() {
 
                 {/* Right Side: Actions + User */}
                 <div className="flex items-center gap-3">
+                    {/* Native Premium Language Switcher */}
+                    {mounted && <LanguageSwitcher />}
+
                     {/* Notifications */}
                     <button className="p-2 text-slate-500 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 rounded-full transition-all duration-200">
                         <span className="material-symbols-outlined">notifications</span>
@@ -100,7 +106,7 @@ export function Navbar() {
                             className="flex items-center gap-2 px-4 py-2 primary-gradient text-white rounded-lg font-semibold text-sm shadow-md hover:scale-[1.02] active:scale-95 transition-all"
                         >
                             <span className="material-symbols-outlined text-sm">login</span>
-                            Sign In
+                            {t("nav.signin")}
                         </button>
                     )}
                 </div>
