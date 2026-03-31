@@ -1,83 +1,117 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import AzureADProvider from "next-auth/providers/azure-ad";
-import OktaProvider from "next-auth/providers/okta";
+import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { resolveRole, getDefaultRedirect } from "@/config/roles";
 
-export const authOptions: NextAuthOptions = {
-    providers: [
-        AzureADProvider({
-            clientId: process.env.AZURE_AD_CLIENT_ID || "mock-azure-client-id",
-            clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "mock-azure-secret",
-            tenantId: process.env.AZURE_AD_TENANT_ID || "mock-azure-tenant",
-            // You can map Azure AD App Roles to NextAuth using the profile callback
-            profile(profile) {
-                return {
-                    id: profile.oid,
-                    name: profile.name,
-                    email: profile.preferred_username,
-                    // Force Admins for now since we haven't configured Enterprise App Roles in Azure yet!
-                    // In production, this would look at `profile.roles`
-                    role: "Admin",
-                }
-            }
-        }),
-        OktaProvider({
-            clientId: process.env.OKTA_CLIENT_ID || "mock-okta-client-id",
-            clientSecret: process.env.OKTA_CLIENT_SECRET || "mock-okta-client-secret",
-            issuer: process.env.OKTA_ISSUER || "https://mock-okta.com/oauth2/default",
-            profile(profile) {
-                return {
-                    id: profile.sub,
-                    name: profile.name,
-                    email: profile.email,
-                    // Assuming Okta passes groups in profile.groups
-                    role: profile.groups?.includes("Admin") ? "Admin" : 
-                          profile.groups?.includes("Manager") ? "Manager" : "Adjuster",
-                }
-            }
-        }),
+// ── Build the providers list dynamically ──────────────────────────
+
+const providers: NextAuthOptions["providers"] = [
+    // ─── Google OAuth ───────────────────────────────────────────
+    GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID || "",
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+        profile(profile) {
+            return {
+                id: profile.sub,
+                name: profile.name,
+                email: profile.email,
+                image: profile.picture,
+                role: resolveRole(profile.email),
+            };
+        },
+    }),
+
+    // ─── GitHub OAuth ───────────────────────────────────────────
+    GitHubProvider({
+        clientId: process.env.GITHUB_CLIENT_ID || "",
+        clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+        profile(profile) {
+            return {
+                id: String(profile.id),
+                name: profile.name || profile.login,
+                email: profile.email,
+                image: profile.avatar_url,
+                role: resolveRole(profile.email),
+            };
+        },
+    }),
+
+    // ─── Azure AD (Enterprise SSO) ──────────────────────────────
+    AzureADProvider({
+        clientId: process.env.AZURE_AD_CLIENT_ID || "",
+        clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "",
+        tenantId: process.env.AZURE_AD_TENANT_ID || "",
+        profile(profile) {
+            return {
+                id: profile.oid,
+                name: profile.name,
+                email: profile.preferred_username,
+                role: resolveRole(profile.preferred_username),
+            };
+        },
+    }),
+];
+
+// ─── Demo Credentials Provider (gated behind env var) ───────────
+if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+    providers.push(
         CredentialsProvider({
             name: "Demo Roles",
             credentials: {
-                role: { label: "Role", type: "text" }
+                role: { label: "Role", type: "text" },
             },
             async authorize(credentials) {
                 if (!credentials?.role) return null;
-                
+
                 const role = credentials.role;
-                
-                // Return a mock user based on the selected role
-                if (role === "Admin") {
-                    return { id: "1", name: "Sarah Admin", email: "admin@insurai.com", role: "Admin" };
-                } else if (role === "Adjuster") {
-                    return { id: "2", name: "John Adjuster", email: "adjuster@insurai.com", role: "Adjuster" };
-                } else if (role === "Underwriter") {
-                    return { id: "3", name: "David Underwriter", email: "underwriter@insurai.com", role: "Underwriter" };
-                } else if (role === "Customer") {
-                    return { id: "4", name: "Ramesh Customer", email: "customer@insurai.com", role: "Customer" };
-                }
-                
-                return null;
-            }
+                const demoUsers: Record<string, { id: string; name: string; email: string; role: string }> = {
+                    Admin:       { id: "demo-1", name: "Sarah Admin",       email: "admin@insurai.com",       role: "Admin" },
+                    Adjuster:    { id: "demo-2", name: "John Adjuster",     email: "adjuster@insurai.com",    role: "Adjuster" },
+                    Underwriter: { id: "demo-3", name: "David Underwriter", email: "underwriter@insurai.com", role: "Underwriter" },
+                    Manager:     { id: "demo-4", name: "Lisa Manager",      email: "manager@insurai.com",     role: "Manager" },
+                    Customer:    { id: "demo-5", name: "Ramesh Customer",   email: "customer@insurai.com",    role: "Customer" },
+                };
+
+                return demoUsers[role] || null;
+            },
         })
-    ],
+    );
+}
+
+// ── NextAuth Configuration ────────────────────────────────────────
+
+export const authOptions: NextAuthOptions = {
+    providers,
     callbacks: {
         async jwt({ token, user }) {
-            // Persist the role to the token right after sign in
+            // Persist role & image to the JWT right after sign in
             if (user) {
                 token.role = user.role;
+                token.picture = user.image;
             }
             return token;
         },
         async session({ session, token }) {
-            // Send properties to the client
+            // Expose role & image to the client session
             session.user.role = token.role as string;
+            if (token.picture) {
+                session.user.image = token.picture as string;
+            }
             return session;
-        }
+        },
+        async redirect({ url, baseUrl }) {
+            // If url is relative, prefix with baseUrl
+            if (url.startsWith("/")) return `${baseUrl}${url}`;
+            // Allow callbacks on same origin
+            if (new URL(url).origin === baseUrl) return url;
+            return baseUrl;
+        },
     },
     pages: {
-        signIn: '/login',
-    }
+        signIn: "/login",
+    },
 };
 
 const handler = NextAuth(authOptions);

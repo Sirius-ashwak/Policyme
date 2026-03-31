@@ -8,11 +8,14 @@ declare module "next-auth" {
     user: {
       /** The user's role. */
       role: string
+      /** The user's profile image URL (from OAuth providers). */
+      image?: string
     } & DefaultSession["user"]
   }
 
   interface User {
-      role: string
+    role: string
+    image?: string
   }
 }
 
@@ -21,5 +24,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     /** The user's role. */
     role?: string
+    /** The user's profile image URL. */
+    picture?: string
   }
 }

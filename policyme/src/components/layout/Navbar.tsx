@@ -2,10 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+/** Role-based navigation: only show links the user's role can access */
+const NAV_LINKS: { labelKey: string; href: string; roles: string[] }[] = [
+    { labelKey: "nav.portal",      href: "/portal",                roles: ["Customer", "Admin"] },
+    { labelKey: "nav.underwriter", href: "/dashboard/underwriter", roles: ["Underwriter", "Admin"] },
+    { labelKey: "nav.adjuster",    href: "/dashboard/adjuster",    roles: ["Adjuster", "Admin"] },
+    { labelKey: "nav.manager",     href: "/dashboard/manager",     roles: ["Manager", "Admin"] },
+    { labelKey: "nav.admin",       href: "/dashboard/admin",       roles: ["Admin"] },
+];
 
 export function Navbar() {
     const { data: session, status } = useSession();
@@ -17,26 +27,14 @@ export function Navbar() {
         setMounted(true);
     }, []);
 
-    // Determine which top-level section is active
-    const isPortal = pathname.startsWith("/portal");
-    const isUnderwriter = pathname.startsWith("/dashboard/underwriter") || pathname.includes("/underwriter");
-    const isAdjuster = pathname.startsWith("/dashboard/adjuster") || pathname.includes("/adjuster");
-    const isManager = pathname.startsWith("/dashboard/manager");
-    const isAdmin = pathname.startsWith("/dashboard/admin");
+    const userRole = session?.user?.role || "";
 
-    const roleLinks = [
-        { label: t("nav.portal"), href: "/portal", active: isPortal },
-        { label: t("nav.underwriter"), href: "/dashboard/underwriter", active: isUnderwriter },
-        { label: t("nav.adjuster"), href: "/dashboard/adjuster", active: isAdjuster },
-    ];
-
-    // Add Manager/Admin links based on session role
-    if (mounted && session?.user?.role === "Manager" || session?.user?.role === "Admin") {
-        roleLinks.push({ label: t("nav.manager"), href: "/dashboard/manager", active: isManager });
-    }
-    if (mounted && session?.user?.role === "Admin") {
-        roleLinks.push({ label: t("nav.admin"), href: "/dashboard/admin", active: isAdmin });
-    }
+    // Filter nav links based on user's role
+    const visibleLinks = NAV_LINKS.filter(link => link.roles.includes(userRole)).map(link => ({
+        label: t(link.labelKey),
+        href: link.href,
+        active: pathname.startsWith(link.href),
+    }));
 
     return (
         <header className="fixed top-0 w-full z-50 glass-header shadow-[0_1px_0_0_rgba(0,0,0,0.05)] h-16">
@@ -52,27 +50,29 @@ export function Navbar() {
                         </span>
                     </Link>
 
-                    {/* Role Navigation Tabs */}
-                    <nav className="hidden md:flex items-center gap-6">
-                        {roleLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={`text-sm font-medium transition-colors ${
-                                    link.active
-                                        ? "text-blue-600 dark:text-blue-400 font-semibold border-b-2 border-blue-600 dark:border-blue-400 pb-1"
-                                        : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                                }`}
-                            >
-                                {link.label}
-                            </Link>
-                        ))}
-                    </nav>
+                    {/* Role Navigation Tabs — only show links user has access to */}
+                    {mounted && session && (
+                        <nav className="hidden md:flex items-center gap-6">
+                            {visibleLinks.map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`text-sm font-medium transition-colors ${
+                                        link.active
+                                            ? "text-blue-600 dark:text-blue-400 font-semibold border-b-2 border-blue-600 dark:border-blue-400 pb-1"
+                                            : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                                    }`}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                        </nav>
+                    )}
                 </div>
 
                 {/* Right Side: Actions + User */}
                 <div className="flex items-center gap-3">
-                    {/* Native Premium Language Switcher */}
+                    {/* Language Switcher */}
                     {mounted && <LanguageSwitcher />}
 
                     {/* Notifications */}
@@ -90,15 +90,25 @@ export function Navbar() {
                         <div className="h-8 w-20 animate-pulse bg-slate-200 dark:bg-slate-800 rounded-full" />
                     ) : session ? (
                         <button
-                            onClick={() => signOut()}
+                            onClick={() => signOut({ callbackUrl: "/login" })}
                             className="flex items-center gap-2 p-1 pl-3 bg-slate-100 dark:bg-slate-800 rounded-full border border-[var(--insurai-outline-variant)]/20 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                         >
                             <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
                                 {session.user?.name?.split(" ").map((n: string) => n[0]).join("") || "U"}
                             </span>
-                            <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 ring-2 ring-[var(--insurai-surface-container)]">
-                                <span className="material-symbols-outlined text-xl">account_circle</span>
-                            </div>
+                            {session.user?.image ? (
+                                <Image
+                                    src={session.user.image}
+                                    alt={session.user.name || "Profile"}
+                                    width={32}
+                                    height={32}
+                                    className="rounded-full ring-2 ring-[var(--insurai-surface-container)]"
+                                />
+                            ) : (
+                                <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 ring-2 ring-[var(--insurai-surface-container)]">
+                                    <span className="material-symbols-outlined text-xl">account_circle</span>
+                                </div>
+                            )}
                         </button>
                     ) : (
                         <button
