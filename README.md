@@ -1,74 +1,92 @@
 # PolicyMe
 
-An open-source intelligent insurance analysis and agentic OCR platform. PolicyMe provides a complete microservice architecture to ingest, analyze, and resolve complex insurance documents through AI-powered graph extraction and retrieval-augmented generation (GraphRAG).
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-14-black" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Python-FastAPI-blue" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Java-Spring%20Boot-green" alt="Spring Boot" />
+  <img src="https://img.shields.io/badge/Database-Neo4j-blueviolet" alt="Neo4j" />
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License" />
+</p>
 
-## Table of Contents
+An open-source, intelligent insurance analysis and agentic OCR platform. PolicyMe provides a robust microservice architecture to ingest, analyze, and resolve complex insurance documents through AI-powered graph extraction and retrieval-augmented generation (GraphRAG).
 
-- [Architecture Overview](#architecture-overview)
-- [Repository Structure](#repository-structure)
-- [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-- [Contributing](#contributing)
-- [License](#license)
+## Key Features
 
-## Architecture Overview
+- **Agentic OCR Pipeline:** Automated, high-precision document ingestion and text extraction.
+- **GraphRAG Intelligence:** Deep semantic relationship parsing using local LLMs.
+- **Microservices Architecture:** Highly scalable, decoupled services designed for heavy workloads.
+- **Interactive Dashboards:** Modern web interfaces for real-time visualization and claim management.
 
-PolicyMe is designed as a distributed, decoupled system capable of handling high-volume document pipelines and complex semantic queries.
+## Architecture & Tech Stack
 
-The architecture consists of three primary domains:
+PolicyMe is designed as a distributed system capable of handling high-volume document pipelines and complex semantic queries across three primary domains:
 
-1. **Client & Presentation:** A Next.js dashboard and portal handling user authentication, document upload orchestration, and interactive knowledge graph visualization.
-2. **Document Ingestion Pipeline:** A Java Spring Boot service responsible for taking raw binaries, performing OCR preprocessing, persisting to object storage (S3), and routing extracted text payloads to event streams.
-3. **GraphRAG Intelligence Engine:** A Python backend consuming event streams, utilizing open-weights local LLMs (via Ollama) to parse semantic relationships, and storing the resulting knowledge graphs in Neo4j for advanced claim resolution.
+1. **Client & Presentation (`/policyme`)** 
+   - A Next.js 14 dashboard and portal handling user authentication, document upload orchestration, and interactive knowledge graph visualization.
+   - *Tech:* React, Tailwind CSS, Framer Motion, Radix UI.
+
+2. **Document Ingestion Pipeline (`/policyme-java-ingestion`)** 
+   - A robust Java Spring Boot service responsible for taking raw binaries, performing OCR preprocessing, persisting to object storage (S3), and routing text payloads.
+   - *Tech:* Java 17, Spring Boot, Apache Kafka, S3.
+
+3. **GraphRAG Intelligence Engine (`/policyme-graphrag-engine`)** 
+   - A Python backend consuming event streams, utilizing open-weights local LLMs via Ollama to parse semantic relationships, and storing the resulting knowledge graphs in Neo4j.
+   - *Tech:* Python 3.10+, FastAPI, LangChain, Ollama, Neo4j.
 
 ## Repository Structure
 
-This repository is a monorepo containing the following discrete services:
+This repository is a monorepo containing our discrete services:
 
-### `policyme/`
-The frontend and API gateway.
-- Framework: Next.js 14 (App Router)
-- Styling: Tailwind CSS, Framer Motion
-- UI Components: Radix primitives
-
-### `policyme-java-ingestion/`
-The document intake and preprocessing service.
-- Framework: Java 17, Spring Boot
-- Messaging: Apache Kafka integration
-- Storage: S3 abstraction layer
-
-### `policyme-graphrag-engine/`
-The core AI analysis and graph extraction service.
-- Framework: Python 3.10+, FastAPI
-- AI integration: LangChain, Ollama (local models)
-- Database: Neo4j
-
-## Prerequisites
-
-To run the complete platform locally, ensure the following dependencies are installed:
-
-- Node.js (v18.x or newer)
-- Java Development Kit (JDK 17)
-- Apache Maven
-- Python (v3.10.x or newer)
-- Docker and Docker Compose (required for standing up Neo4j and Kafka)
-- Ollama (running locally with the required LLM models pulled)
+```text
+policyme/
+├── policyme/                   # Frontend & API Gateway (Next.js)
+├── policyme-java-ingestion/    # Document intake & OCR (Java)
+└── policyme-graphrag-engine/   # AI analysis & GraphRAG (Python)
+```
 
 ## Getting Started
 
-Because PolicyMe is a distributed platform, each service must be configured and booted individually or orchestrated via Docker. 
+### Prerequisites
 
-Please refer to the detailed `README.md` located within each service directory for specific installation, configuration, and execution commands.
+To run the complete platform locally, ensure the following dependencies are installed:
 
-1. Start infrastructure dependencies (Neo4j, Kafka) using Docker.
-2. Boot the Java Ingestion service: `cd policyme-java-ingestion && mvn spring-boot:run`
-3. Boot the Python Engine: `cd policyme-graphrag-engine && python main.py`
-4. Boot the Next.js Frontend: `cd policyme && npm run dev`
+- **Node.js**: v18.x or newer
+- **Java**: JDK 17 & Apache Maven
+- **Python**: v3.10.x or newer
+- **Docker**: For infrastructure dependencies (Neo4j, Kafka)
+- **Ollama**: Running locally with required models
+
+### Installation & Execution
+
+Because PolicyMe is a distributed platform, services can be orchestrated via Docker or booted individually. Please refer to the specific `README.md` in each service directory for deep-dive instructions.
+
+**Quick Start Workflow:**
+
+1. **Infrastructure:** Start data stores and message brokers (Neo4j, Kafka) using Docker.
+2. **Ingestion Service:**
+   ```bash
+   cd policyme-java-ingestion
+   mvn spring-boot:run
+   ```
+3. **Intelligence Engine:**
+   ```bash
+   cd policyme-graphrag-engine
+   pip install -r requirements.txt
+   python main.py
+   ```
+4. **Web Client:**
+   ```bash
+   cd policyme
+   npm install
+   npm run dev
+   ```
 
 ## Contributing
 
-Contributions to PolicyMe are welcome. Please ensure that pull requests adhere to the existing architectural patterns and include appropriate tests for new functionality. Focus on maintaining the separation of concerns between the ingestion, analysis, and presentation layers.
+Contributions to PolicyMe are always welcome! 
+
+When contributing, please ensure your pull requests adhere to our architectural patterns. Maintain the strict separation of concerns between the ingestion, analysis, and presentation layers, and include appropriate tests for any new functionality.
 
 ## License
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
