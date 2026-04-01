@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const NAV_ITEMS = [
     { name: "Dashboard", href: "/dashboard/admin", icon: "dashboard" },
@@ -70,18 +71,25 @@ export function AdminSidebar() {
 
             {/* Footer Items */}
             <div className="mt-auto px-4 py-6 space-y-4">
-                <button className="w-full py-3 bg-gradient-to-br from-[var(--primary)] to-[var(--insurai-primary-container)] text-white rounded-lg text-xs font-bold shadow-lg shadow-[var(--primary)]/20 active:scale-95 transition-transform">
+                <button 
+                    onClick={() => toast.promise(new Promise((resolve) => setTimeout(resolve, 3000)), {
+                        loading: "Initializing model deployment...",
+                        success: "Model deployed to staging successfully.",
+                        error: "Deployment failed."
+                    })}
+                    className="w-full py-3 bg-gradient-to-br from-[var(--primary)] to-[var(--insurai-primary-container)] text-white rounded-lg text-xs font-bold shadow-lg shadow-[var(--primary)]/20 active:scale-95 transition-transform"
+                >
                     Deploy New Model
                 </button>
                 <div className="space-y-1">
-                    <Link href="#" className="flex items-center gap-3 px-2 py-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs transition-colors">
+                    <button onClick={() => toast("Opening Documentation...")} className="w-full flex items-center gap-3 px-2 py-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs transition-colors">
                         <span className="material-symbols-outlined text-sm">description</span>
                         <span>Documentation</span>
-                    </Link>
-                    <Link href="#" className="flex items-center gap-3 px-2 py-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs transition-colors">
+                    </button>
+                    <button onClick={() => toast.success("All Systems Operational")} className="w-full flex items-center gap-3 px-2 py-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs transition-colors">
                         <span className="material-symbols-outlined text-sm text-green-500">cloud_done</span>
                         <span>System Status</span>
-                    </Link>
+                    </button>
                     <Link href="/" className="flex items-center gap-3 px-2 py-2 mt-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs transition-colors border-t border-slate-200/50 dark:border-slate-800/50 pt-4">
                         <span className="material-symbols-outlined text-sm">arrow_back</span>
                         <span>Exit Admin</span>
