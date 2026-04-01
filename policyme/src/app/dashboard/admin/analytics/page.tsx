@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function AIAnalyticsPage() {
+    const [timeframe, setTimeframe] = useState<"24H" | "7D" | "30D" | "Custom">("24H");
+    
     return (
         <div className="flex-1 w-full bg-[var(--insurai-surface)] font-['Manrope'] px-6 md:px-10 py-12">
             
@@ -20,13 +23,24 @@ export default function AIAnalyticsPage() {
                 
                 <div className="flex items-center gap-2">
                     <div className="bg-[var(--insurai-surface-container-low)] p-1 rounded-xl flex shadow-sm border border-[var(--insurai-outline-variant)]/10">
-                        <button className="px-4 py-2 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 text-[var(--insurai-on-surface)] shadow-[0_2px_4px_rgba(0,0,0,0.02)] border border-[var(--insurai-outline-variant)]/20 transition-all font-['Inter']">24H</button>
-                        <button className="px-4 py-2 rounded-lg text-xs font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors font-['Inter']">7D</button>
-                        <button className="px-4 py-2 rounded-lg text-xs font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors font-['Inter']">30D</button>
-                        <button className="px-4 py-2 rounded-lg text-xs font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors font-['Inter'] flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-                            Custom
-                        </button>
+                        {["24H", "7D", "30D", "Custom"].map((tf) => (
+                            <button
+                                key={tf}
+                                onClick={() => setTimeframe(tf as any)}
+                                className={`px-4 py-2 rounded-lg text-xs font-['Inter'] transition-all ${
+                                    timeframe === tf 
+                                        ? "font-bold bg-white dark:bg-slate-800 text-[var(--insurai-on-surface)] shadow-[0_2px_4px_rgba(0,0,0,0.02)] border border-[var(--insurai-outline-variant)]/20" 
+                                        : "font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)]"
+                                }`}
+                            >
+                                {tf === "Custom" ? (
+                                    <span className="flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                                        Custom
+                                    </span>
+                                ) : tf}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -55,7 +69,7 @@ export default function AIAnalyticsPage() {
                             </div>
                             
                             {/* Model Selector */}
-                            <div className="flex items-center gap-2 bg-[var(--insurai-surface-container-low)] px-3 py-1.5 rounded-lg border border-[var(--insurai-outline-variant)]/10 cursor-pointer hover:bg-[var(--insurai-surface-container)] transition-colors">
+                            <div onClick={() => toast.success("Model Context Switched", { description: "Now tracking Gemini-Pro-2.0 semantic matches." })} className="flex items-center gap-2 bg-[var(--insurai-surface-container-low)] px-3 py-1.5 rounded-lg border border-[var(--insurai-outline-variant)]/10 cursor-pointer hover:bg-[var(--insurai-surface-container)] transition-colors">
                                 <span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span>
                                 <span className="text-xs font-bold text-[var(--insurai-on-surface-variant)] font-['Inter']">Gemini-Pro-2.0</span>
                                 <span className="material-symbols-outlined text-[16px] text-[var(--insurai-on-surface-variant)]">expand_more</span>
@@ -147,7 +161,7 @@ export default function AIAnalyticsPage() {
                             <span className="material-symbols-outlined text-red-500" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
                             Top Hallucination Risks
                         </h3>
-                        <button className="text-xs font-bold text-[var(--primary)] hover:text-[var(--insurai-primary-container)] transition-colors uppercase tracking-wider font-['Inter']">
+                        <button onClick={() => toast("Fetching full risk logs...", { description: "Loading raw hallucination records in background."})} className="text-xs font-bold text-[var(--primary)] hover:text-[var(--insurai-primary-container)] transition-colors uppercase tracking-wider font-['Inter']">
                             View All Logs
                         </button>
                     </div>
@@ -182,7 +196,7 @@ export default function AIAnalyticsPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="px-4 py-1.5 rounded-lg text-[10px] font-bold text-slate-700 dark:text-slate-200 border border-[var(--insurai-outline-variant)]/20 hover:bg-[var(--insurai-surface-container)] transition-colors uppercase tracking-wider shadow-sm">
+                                        <button onClick={() => toast.success("Override Logged", { description: "HITL workflow initiated for this query."})} className="px-4 py-1.5 rounded-lg text-[10px] font-bold text-slate-700 dark:text-slate-200 border border-[var(--insurai-outline-variant)]/20 hover:bg-[var(--insurai-surface-container)] transition-colors uppercase tracking-wider shadow-sm">
                                             FLAGGED HITL
                                         </button>
                                     </td>
@@ -207,7 +221,7 @@ export default function AIAnalyticsPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="px-4 py-1.5 rounded-lg text-[10px] font-bold text-[var(--primary)] bg-[var(--primary)]/10 border border-[var(--primary)]/20 hover:bg-[var(--primary)]/20 transition-colors uppercase tracking-wider shadow-sm">
+                                        <button onClick={() => toast.success("Re-queued", { description: "Query sent to RAG pipeline for retrieval again."})} className="px-4 py-1.5 rounded-lg text-[10px] font-bold text-[var(--primary)] bg-[var(--primary)]/10 border border-[var(--primary)]/20 hover:bg-[var(--primary)]/20 transition-colors uppercase tracking-wider shadow-sm">
                                             RAG RETRIED
                                         </button>
                                     </td>
@@ -250,7 +264,14 @@ export default function AIAnalyticsPage() {
                         <p className="text-xs font-['Inter'] text-[var(--insurai-on-surface-variant)] leading-relaxed mb-4">
                             The embedding matrix is being updated utilizing the resolved 640 HITL overrides from the past 14 days, improving semantic correlation for edge-case liability clauses.
                         </p>
-                        <button className="w-full py-3 rounded-xl bg-[var(--insurai-on-surface)] text-[var(--insurai-surface)] text-sm font-bold shadow-lg hover:shadow-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-all font-['Manrope']">
+                        <button 
+                            onClick={() => toast.promise(new Promise(r => setTimeout(r, 2000)), {
+                                loading: "Downloading training logs...",
+                                success: "Training_Logs_Epoch42.csv downloaded",
+                                error: "Download failed"
+                            })}
+                            className="w-full py-3 rounded-xl bg-[var(--insurai-on-surface)] text-[var(--insurai-surface)] text-sm font-bold shadow-lg hover:shadow-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-all font-['Manrope']"
+                        >
                             View Training Logs
                         </button>
                     </div>
