@@ -43,7 +43,7 @@ public class TextExtractionService {
     public boolean isSupportedFileType(String contentType) {
         return contentType != null && (
                 contentType.equals("application/pdf") ||
-                contentType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                contentType.equals("application/x-pdf")
         );
     }
 }

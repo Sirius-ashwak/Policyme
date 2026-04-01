@@ -18,7 +18,7 @@ const faqs = [
     },
     {
         q: "What file formats do you support?",
-        a: "We support PDF, DOCX, XLSX, and plain text. Our ingestion engine extracts structured data from tables, headers, and nested sections, preserving the document hierarchy in the knowledge graph.",
+        a: "We currently support PDF uploads. Our ingestion engine extracts structured data from policy text and preserves the document hierarchy in the knowledge graph.",
     },
     {
         q: "Can I integrate PolicyMe with existing tools?",

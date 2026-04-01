@@ -179,7 +179,7 @@ export default function KnowledgeGraphPage() {
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex items-center gap-2">
                                         <span className="material-symbols-outlined text-[var(--insurai-on-surface-variant)] text-[18px]">description</span>
-                                        <p className="text-xs font-bold font-['Inter'] truncate max-w-[150px]">State_Regulations_CA_2024.docx</p>
+                                        <p className="text-xs font-bold font-['Inter'] truncate max-w-[150px]">State_Regulations_CA_2024.pdf</p>
                                     </div>
                                     <span className="text-[10px] font-bold text-slate-400">In Queue</span>
                                 </div>

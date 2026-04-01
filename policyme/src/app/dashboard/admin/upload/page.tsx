@@ -11,7 +11,7 @@ export default function UploadPage() {
     const [uploadStatus, setUploadStatus] = useState<string | null>(null);
     const [recentFiles, setRecentFiles] = useState([
         { name: "2026_Employee_Handbook_v2.pdf", status: "success", time: "10 mins ago" },
-        { name: "IT_Security_Vendor_Policy.docx", status: "success", time: "2 hours ago" },
+        { name: "IT_Security_Vendor_Policy.pdf", status: "success", time: "2 hours ago" },
         { name: "Scanned_Legacy_Contracts_1999.pdf", status: "error", time: "Yesterday" },
     ]);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +64,7 @@ export default function UploadPage() {
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
-                accept=".pdf,.docx,.txt"
+                accept=".pdf"
                 onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
             />
 
@@ -85,7 +85,7 @@ export default function UploadPage() {
                     {isUploading ? "Uploading & Ingesting..." : "Click to Upload or Drag and Drop"}
                 </h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    Supported formats: PDF, DOCX, TXT (Max size 50MB per file). Documents will be OCR scanned and parsed into Graph nodes automatically.
+                    Supported format: PDF (Max size 50MB per file). Documents will be OCR scanned and parsed into Graph nodes automatically.
                 </p>
                 <Button disabled={isUploading} size="lg" className="px-8">
                     {isUploading ? "Processing..." : "Select Files from Computer"}

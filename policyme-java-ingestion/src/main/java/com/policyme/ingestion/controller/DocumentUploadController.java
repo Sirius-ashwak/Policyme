@@ -42,7 +42,7 @@ public class DocumentUploadController {
 
     /**
      * POST /api/documents/upload
-     * Accepts a multipart file upload (PDF/DOCX, max 50MB).
+          * Accepts a multipart file upload (PDF, max 50MB).
      * 
      * Flow:
      * 1. Validate file type
@@ -60,14 +60,14 @@ public class DocumentUploadController {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "No file provided",
-                    "message", "Please upload a PDF or DOCX file."
+                    "message", "Please upload a PDF file."
             ));
         }
 
         if (!textExtractionService.isSupportedFileType(file.getContentType())) {
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "Unsupported file type",
-                    "message", "Only PDF and DOCX files are supported. Received: " + file.getContentType()
+                    "message", "Only PDF files are supported. Received: " + file.getContentType()
             ));
         }
 
@@ -80,10 +80,7 @@ public class DocumentUploadController {
             String s3Key = s3Service.uploadFile(file);
 
             // 3. Extract text
-            String extractedText = "";
-            if ("application/pdf".equals(file.getContentType())) {
-                extractedText = textExtractionService.extractTextFromPdf(file);
-            }
+            String extractedText = textExtractionService.extractTextFromPdf(file);
             // Truncate for Kafka payload (full text stored in S3)
             String textPreview = extractedText.length() > 5000 
                     ? extractedText.substring(0, 5000) + "...[TRUNCATED]" 
