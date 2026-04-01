@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
+ENABLE_MOCKS = os.getenv("ENABLE_MOCKS", "true").strip().lower() in {"1", "true", "yes", "on"}
+ALLOW_MOCKS = APP_ENV == "local" and ENABLE_MOCKS
+
 # Configure Gemini client — just one API key, that's it
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 MODEL = "gemini-2.5-flash"
@@ -90,8 +94,11 @@ Use the context if relevant:
             answer = content
         
     except Exception as e:
+        if not ALLOW_MOCKS:
+            raise RuntimeError("Gemini generation failed and mock fallbacks are disabled.") from e
         print(f"Gemini Error, using fallback: {e}")
         print("Ensure GEMINI_API_KEY is set correctly in .env")
+        extracted_data["is_mock"] = True
 
     return {
         "answer": answer,
@@ -150,5 +157,7 @@ async def evaluate_underwriting_risk(customer_data: dict) -> dict:
         }
         
     except Exception as e:
+        if not ALLOW_MOCKS:
+            raise RuntimeError("Underwriting evaluation failed and mock fallbacks are disabled.") from e
         print(f"Error evaluating risk: {e}")
         return default_response

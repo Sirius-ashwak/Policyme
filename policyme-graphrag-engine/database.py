@@ -1,54 +1,151 @@
 import os
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
-import asyncio
 
 load_dotenv()
 
 NEO4J_URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
+APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
+ENABLE_MOCKS = os.getenv("ENABLE_MOCKS", "true").strip().lower() in {"1", "true", "yes", "on"}
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-async def search_neo4j_graph(query: str):
-    """
-    Simulates sending the query through OpenAI embeddings and 
-    performing a vector similarity search in Neo4j, followed by graph traversal.
-    """
-    try:
-        # In a real implementation:
-        # 1. embedding = get_openai_embedding(query)
-        # 2. MATCH (c:Clause) CALL db.index.vector.queryNodes('clause_embedding', 10, embedding) YIELD node, score
-        # 3. MATCH (node)<-[:CONTAINS]-(p:Policy) RETURN node, p
-        
-        # Test query mapping for prototype responses
-        q_lower = query.lower()
-        if "remote" in q_lower or "work" in q_lower:
-            return {
-                "clauses": [
-                    {"id": "HR Policy § 3.2", "text": "Employees are allowed to work remotely up to 3 days per week.", "department": "HR"},
-                    {"id": "Security § 4.1", "text": "Remote workers must use company VPN.", "department": "IT"}
-                ]
-            }
-        elif "windshield" in q_lower or "damage" in q_lower:
-            return {
-                "clauses": [
-                    {"id": "Auto Policy § 7", "text": "Windshield damage is covered with no deductible.", "department": "Claims"},
-                    {"id": "Auto Policy § 12", "text": "Comprehensive claims require a $500 deductible.", "department": "Claims"} # Simulated conflict
-                ]
-            }
-        
-        # Default fallback
+
+def mock_mode_enabled() -> bool:
+    return APP_ENV == "local" and ENABLE_MOCKS
+
+
+def build_mock_clause_response(query: str):
+    q_lower = query.lower()
+    if "remote" in q_lower or "work" in q_lower:
         return {
             "clauses": [
-                {"id": "General § 1.1", "text": "Standard corporate operating procedure default clause.", "department": "Legal"}
+                {
+                    "id": "HR Policy 3.2",
+                    "text": "Employees are allowed to work remotely up to 3 days per week.",
+                    "department": "HR",
+                },
+                {
+                    "id": "Security 4.1",
+                    "text": "Remote workers must use company VPN.",
+                    "department": "IT",
+                },
             ]
         }
+    if "windshield" in q_lower or "damage" in q_lower:
+        return {
+            "clauses": [
+                {
+                    "id": "Auto Policy 7",
+                    "text": "Windshield damage is covered with no deductible.",
+                    "department": "Claims",
+                },
+                {
+                    "id": "Auto Policy 12",
+                    "text": "Comprehensive claims require a 500 USD deductible.",
+                    "department": "Claims",
+                },
+            ]
+        }
+    return {
+        "clauses": [
+            {
+                "id": "General 1.1",
+                "text": "Standard corporate operating procedure default clause.",
+                "department": "Legal",
+            }
+        ]
+    }
+
+
+async def insert_document_and_chunks(document_id: str, filename: str, chunk_data_list: list):
+    """
+    Insert or update document/chunk nodes in Neo4j.
+    Uses MERGE semantics so retries and duplicate events are idempotent.
+    """
+    if not chunk_data_list:
+        return
+
+    cypher_query = """
+    MERGE (d:Document {id: $document_id})
+    ON CREATE SET d.createdAt = datetime()
+    SET d.filename = $filename,
+        d.updatedAt = datetime()
+    WITH d
+    UNWIND $chunks AS chunk
+    MERGE (c:Chunk {id: chunk.chunk_id})
+    ON CREATE SET c.createdAt = datetime()
+    SET c.text = chunk.text,
+        c.embedding = chunk.embedding,
+        c.index = chunk.index,
+        c.documentId = $document_id,
+        c.updatedAt = datetime()
+    MERGE (d)-[:HAS_CHUNK]->(c)
+    """
+
+    try:
+        with driver.session() as session:
+            session.run(
+                cypher_query,
+                document_id=document_id,
+                filename=filename,
+                chunks=chunk_data_list,
+            )
+    except Exception as e:
+        print(f"Neo4j insert error: {e}")
+        if mock_mode_enabled():
+            print("Skipping Neo4j insert in local mock mode.")
+            return
+        raise RuntimeError("Neo4j insert failed and mock fallbacks are disabled.") from e
+
+async def search_neo4j_graph(query: str):
+    """
+    Search for matching clauses in Neo4j.
+    If local mocks are enabled, uses mock data as a fallback.
+    """
+    cypher_query = """
+    MATCH (clause:Clause)
+    WHERE clause.text IS NOT NULL
+      AND toLower(clause.text) CONTAINS toLower($query)
+    RETURN
+      coalesce(clause.id, clause.clauseId, clause.section, elementId(clause)) AS id,
+      clause.text AS text,
+      coalesce(clause.department, "Unknown") AS department
+    LIMIT 10
+    """
+
+    try:
+        with driver.session() as session:
+            result = session.run(cypher_query, query=query)
+            clauses = []
+            for record in result:
+                clause_text = record.get("text")
+                if clause_text:
+                    clauses.append(
+                        {
+                            "id": record.get("id", "Unknown"),
+                            "text": clause_text,
+                            "department": record.get("department", "Unknown"),
+                        }
+                    )
+
+        if clauses:
+            return {"clauses": clauses}
+
+        if mock_mode_enabled():
+            print("No live Neo4j matches found. Falling back to local mock clauses.")
+            return build_mock_clause_response(query)
+
+        return {"clauses": []}
             
     except Exception as e:
         print(f"Database error: {e}")
-        return {"clauses": []}
+        if mock_mode_enabled():
+            print("Neo4j query failed. Falling back to local mock clauses.")
+            return build_mock_clause_response(query)
+        raise RuntimeError("Neo4j query failed and mock fallbacks are disabled.") from e
 
 async def get_macro_graph(limit=500):
     query = """
@@ -114,9 +211,15 @@ async def get_customer_policy_graph(customer_name: str) -> str:
             
     except Exception as e:
         print(f"Database connection error retrieving policy graph: {e}")
+        if not mock_mode_enabled():
+            raise RuntimeError("Neo4j policy lookup failed and mock fallbacks are disabled.") from e
         
     # 2. Demo Safety Fallback: If no clauses found or DB drops, return high-fidelity mock graph data
     if not extracted_text:
+        if not mock_mode_enabled():
+            raise RuntimeError(
+                f"No policy graph data found for customer '{customer_name}' and mock fallbacks are disabled."
+            )
         print("Falling back to simulated Neo4j context for Demo Safety.")
         extracted_text = f"""
         Customer: {customer_name} has Homeowners Policy (#POL-HOME-991)

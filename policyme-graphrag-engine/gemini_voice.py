@@ -2,6 +2,13 @@ import os
 import json
 from google import genai
 from google.genai import types
+from dotenv import load_dotenv
+
+load_dotenv()
+
+APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
+ENABLE_MOCKS = os.getenv("ENABLE_MOCKS", "true").strip().lower() in {"1", "true", "yes", "on"}
+ALLOW_MOCKS = APP_ENV == "local" and ENABLE_MOCKS
 
 VOICE_RAG_SYSTEM_PROMPT = """
 You are InsurAI, an enterprise-grade insurance policy intelligence engine.
@@ -26,6 +33,24 @@ You MUST return a valid JSON object matching this schema:
 }
 """
 
+
+def build_mock_voice_response(target_language: str) -> dict:
+    mock_response_text = "Your claim is valid. Rain flood is covered under Section 4B."
+    if target_language.lower() == "tamil":
+        mock_response_text = "உங்கள் கோரிக்கை செல்லுபடியாகும். Section 4B இன் கீழ் மழை வெல்லம் காப்பீடு செய்யப்பட்டுள்ளது."
+    elif target_language.lower() == "hindi":
+        mock_response_text = "आपका दावा मान्य है। Section 4B के तहत बारिश की बाढ़ कवर की गई है।"
+    elif target_language.lower() == "telugu":
+        mock_response_text = "మీ క్లెయిమ్ చెల్లుబాటు అవుతుంది. Section 4B కింద వర్షపు వరద కవర్ చేయబడింది."
+
+    return {
+        "approved": True,
+        "citation": "Section 4B",
+        "reason": "Mocked: The user mentioned water damage, which is covered under Sec 4B.",
+        "customer_response": mock_response_text,
+        "is_mock": True,
+    }
+
 async def process_voice_claim(audio_bytes: bytes, customer_name: str, graph_context: str, target_language: str = "Tamil"):
     """
     Takes raw audio and a Neo4j graph context, and uses Gemini 2.0 Flash 
@@ -33,24 +58,10 @@ async def process_voice_claim(audio_bytes: bytes, customer_name: str, graph_cont
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
+        if not ALLOW_MOCKS:
+            raise RuntimeError("GEMINI_API_KEY is required when mock fallbacks are disabled.")
         print("Warning: GEMINI_API_KEY not set. Mocking the voice claim response.")
-        
-        # Mocking responses based on language
-        mock_response_text = "Your claim is valid. Rain flood is covered under Section 4B."
-        if target_language.lower() == "tamil":
-            mock_response_text = "உங்கள் கோரிக்கை செல்லுபடியாகும். Section 4B இன் கீழ் மழை வெல்லம் காப்பீடு செய்யப்பட்டுள்ளது."
-        elif target_language.lower() == "hindi":
-            mock_response_text = "आपका दावा मान्य है। Section 4B के तहत बारिश की बाढ़ कवर की गई है।"
-        elif target_language.lower() == "telugu":
-            mock_response_text = "మీ క్లెయిమ్ చెల్లుబాటు అవుతుంది. Section 4B కింద వర్షపు వరద కవర్ చేయబడింది."
-
-        return {
-            "approved": True,
-            "citation": "Section 4B",
-            "reason": "Mocked: The user mentioned water damage, which is covered under Sec 4B.",
-            "customer_response": mock_response_text,
-            "is_mock": True
-        }
+        return build_mock_voice_response(target_language)
 
     try:
         client = genai.Client()
@@ -67,18 +78,6 @@ async def process_voice_claim(audio_bytes: bytes, customer_name: str, graph_cont
             target_language=target_language
         )
         
-        # We use strict JSON output schema to ensure determinism
-        response_schema = {
-            "type": "OBJECT",
-            "properties": {
-                "approved": {"type": "BOOLEAN"},
-                "citation": {"type": "STRING"},
-                "reason": {"type": "STRING"},
-                "customer_response": {"type": "STRING"},
-            },
-            "required": ["approved", "citation", "reason", "customer_response"]
-        }
-
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             response_mime_type="application/json",
@@ -95,4 +94,6 @@ async def process_voice_claim(audio_bytes: bytes, customer_name: str, graph_cont
         
     except Exception as e:
         print(f"Gemini Voice processing error: {e}")
-        raise e
+        if not ALLOW_MOCKS:
+            raise RuntimeError("Gemini voice processing failed and mock fallbacks are disabled.") from e
+        return build_mock_voice_response(target_language)
