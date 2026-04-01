@@ -1,5 +1,6 @@
 package com.policyme.ingestion.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -15,17 +16,24 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
+    @Value("${policyme.cors.allowed-origins:http://localhost:3000,http://localhost:3001,https://policyme.vercel.app}")
+    private String allowedOrigins;
+
+    @Value("${policyme.cors.allow-credentials:true}")
+    private boolean allowCredentials;
+
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:3001",
-                "https://policyme.vercel.app"
-        ));
+        List<String> parsedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+
+        config.setAllowedOrigins(parsedOrigins);
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(allowCredentials);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
