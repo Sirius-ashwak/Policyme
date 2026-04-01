@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function AdminDashboardPage() {
+    const [viewMode, setViewMode] = useState<"live" | "historical">("live");
+    
     return (
         <div className="flex-1 w-full bg-[var(--insurai-surface)] font-['Manrope'] selection:bg-[var(--primary)]/20 px-6 md:px-10 py-12">
             
@@ -18,10 +21,24 @@ export default function AdminDashboardPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-4 bg-[var(--insurai-surface-container-low)] p-1.5 rounded-xl">
-                    <button className="px-4 py-1.5 bg-[var(--insurai-surface-container-lowest)] shadow-[0_2px_4px_rgba(0,0,0,0.02)] rounded-lg text-xs font-['Inter'] font-semibold text-[var(--primary)]">
+                    <button 
+                        onClick={() => setViewMode("live")}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-['Inter'] transition-all ${
+                            viewMode === "live" 
+                                ? "bg-[var(--insurai-surface-container-lowest)] shadow-[0_2px_4px_rgba(0,0,0,0.02)] font-semibold text-[var(--primary)]" 
+                                : "font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)]"
+                        }`}
+                    >
                         LIVE
                     </button>
-                    <button className="px-4 py-1.5 text-xs font-['Inter'] font-medium text-[var(--insurai-on-surface-variant)]">
+                    <button 
+                        onClick={() => setViewMode("historical")}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-['Inter'] transition-all ${
+                            viewMode === "historical" 
+                                ? "bg-[var(--insurai-surface-container-lowest)] shadow-[0_2px_4px_rgba(0,0,0,0.02)] font-semibold text-[var(--primary)]" 
+                                : "font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)]"
+                        }`}
+                    >
                         HISTORICAL
                     </button>
                 </div>
@@ -257,7 +274,7 @@ export default function AdminDashboardPage() {
                             </div>
                             
                         </div>
-                        <button className="w-full mt-8 py-2 text-xs font-['Inter'] font-bold text-[var(--primary)] border border-[var(--primary)]/10 rounded-lg hover:bg-[var(--primary)]/5 transition-colors">
+                        <button onClick={() => toast("Fetching logs...", { description: "Global audit stream opened in new context." })} className="w-full mt-8 py-2 text-xs font-['Inter'] font-bold text-[var(--primary)] border border-[var(--primary)]/10 rounded-lg hover:bg-[var(--primary)]/5 transition-colors">
                             VIEW FULL LOGS
                         </button>
                     </div>
@@ -287,7 +304,11 @@ export default function AdminDashboardPage() {
 
             {/* Floating Action for Quick Alert (Right bottom absolute) */}
             <div className="fixed bottom-8 right-8 z-[60]">
-                <button className="group bg-[var(--insurai-on-surface)] text-[var(--insurai-surface)] p-4 rounded-full shadow-2xl flex items-center gap-2 hover:bg-slate-800 dark:hover:bg-slate-700 transition-all duration-300">
+                <button onClick={() => toast.promise(new Promise(r => setTimeout(r, 1500)), {
+                    loading: 'Connecting to main cluster...',
+                    success: 'Command bridge activated. Awaiting input.',
+                    error: 'Connection failed'
+                })} className="group bg-[var(--insurai-on-surface)] text-[var(--insurai-surface)] p-4 rounded-full shadow-2xl flex items-center gap-2 hover:bg-slate-800 dark:hover:bg-slate-700 transition-all duration-300">
                     <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">bolt</span>
                     <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-500 ease-in-out font-bold text-sm px-0 group-hover:px-2">
                         QUICK ACTIONS
