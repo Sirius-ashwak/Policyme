@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function UserRoleManagementPage() {
     return (
@@ -18,11 +19,18 @@ export default function UserRoleManagementPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-[var(--insurai-outline-variant)]/20 hover:bg-[var(--insurai-surface-container-low)] transition-colors flex items-center gap-2">
+                    <button 
+                        onClick={() => toast.promise(new Promise(r => setTimeout(r, 1500)), {
+                            loading: "Generating user export...",
+                            success: `Exported user_roles_${new Date().toISOString().split('T')[0]}.csv`,
+                            error: "Export failed"
+                        })}
+                        className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-[var(--insurai-outline-variant)]/20 hover:bg-[var(--insurai-surface-container-low)] transition-colors flex items-center gap-2"
+                    >
                         <span className="material-symbols-outlined text-[18px]">download</span>
                         Export CSV
                     </button>
-                    <button className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[var(--primary)] text-white hover:bg-[var(--insurai-primary-container)] transition-all flex items-center gap-2 shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-95">
+                    <button onClick={() => toast("Opening User Creation Wizard", { description: "Identity provider connection initializing..." })} className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[var(--primary)] text-white hover:bg-[var(--insurai-primary-container)] transition-all flex items-center gap-2 shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-95">
                         <span className="material-symbols-outlined text-[18px]">person_add</span>
                         Add User
                     </button>
@@ -164,7 +172,7 @@ export default function UserRoleManagementPage() {
                                     <p className="text-[10px] text-[var(--insurai-outline)] font-['Inter'] tracking-wider mt-0.5">192.168.1.104</p>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <button className="px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/20 hover:bg-[var(--primary)]/5 transition-colors font-['Inter']">
+                                    <button onClick={() => toast.success("Access Granted", { description: "Session unlocked for Sarah Chen" })} className="px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/20 hover:bg-[var(--primary)]/5 transition-colors font-['Inter']">
                                         Manage
                                     </button>
                                 </td>
@@ -199,7 +207,7 @@ export default function UserRoleManagementPage() {
                                     <p className="text-[10px] text-[var(--insurai-outline)] font-['Inter'] tracking-wider mt-0.5">172.16.25.12</p>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <button className="px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/20 hover:bg-[var(--primary)]/5 transition-colors font-['Inter']">
+                                    <button onClick={() => toast("MFA Prompt Sent", { description: "Resent MFA unlock link to m.jordan@claims.net" })} className="px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/20 hover:bg-[var(--primary)]/5 transition-colors font-['Inter']">
                                         Manage
                                     </button>
                                 </td>
@@ -236,7 +244,7 @@ export default function UserRoleManagementPage() {
                                     <p className="text-[10px] text-[var(--insurai-outline)] font-['Inter'] tracking-wider mt-0.5">45.22.10.221</p>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <button className="px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/20 hover:bg-[var(--primary)]/5 transition-colors font-['Inter']">
+                                    <button onClick={() => toast("Viewing Profile", { description: "Loading customer policy records..." })} className="px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/20 hover:bg-[var(--primary)]/5 transition-colors font-['Inter']">
                                         Manage
                                     </button>
                                 </td>
@@ -271,7 +279,7 @@ export default function UserRoleManagementPage() {
                                     <p className="text-[10px] text-[var(--insurai-outline)] font-['Inter'] tracking-wider mt-0.5">82.112.5.44</p>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <button className="px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/20 hover:bg-[var(--primary)]/5 transition-colors font-['Inter']">
+                                    <button onClick={() => toast.error("Account Suspended", { description: "This account cannot be managed until unlocked by a super admin." })} className="px-4 py-1.5 rounded-lg text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/20 hover:bg-[var(--primary)]/5 transition-colors font-['Inter']">
                                         Manage
                                     </button>
                                 </td>
@@ -319,7 +327,14 @@ export default function UserRoleManagementPage() {
                     </p>
                 </div>
                 
-                <button className="md:ml-auto px-6 py-2.5 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/30 dark:border-[var(--primary)]/50 hover:bg-[var(--primary)]/5 dark:hover:bg-[var(--primary)]/10 transition-all shadow-sm font-['Inter'] whitespace-nowrap relative z-10 hover:shadow-md hover:-translate-y-0.5">
+                <button 
+                    onClick={() => toast.promise(new Promise(r => setTimeout(r, 2000)), {
+                        loading: "Analyzing permission graph...",
+                        success: "Anomaly report generated. 4 users flagged.",
+                        error: "Analysis failed"
+                    })}
+                    className="md:ml-auto px-6 py-2.5 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold text-[var(--primary)] border border-[var(--primary)]/30 dark:border-[var(--primary)]/50 hover:bg-[var(--primary)]/5 dark:hover:bg-[var(--primary)]/10 transition-all shadow-sm font-['Inter'] whitespace-nowrap relative z-10 hover:shadow-md hover:-translate-y-0.5"
+                >
                     Review Anomalies
                 </button>
             </div>
