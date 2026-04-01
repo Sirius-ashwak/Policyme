@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Logo } from "@/components/ui/Logo";
 
 /** Role-based navigation: only show links the user's role can access */
 const NAV_LINKS: { labelKey: string; href: string; roles: string[] }[] = [
@@ -43,7 +44,7 @@ export function Navbar() {
                 <div className="flex items-center gap-8">
                     <Link href="/" className="flex items-center gap-2">
                         <div className="w-8 h-8 primary-gradient rounded-lg flex items-center justify-center shadow-md shadow-blue-200/50">
-                            <span className="material-symbols-outlined text-white text-xl">shield_with_heart</span>
+                            <Logo className="w-5 h-5 text-white" />
                         </div>
                         <span className="text-xl font-bold tracking-tighter text-slate-900 dark:text-slate-50">
                             InsurAI

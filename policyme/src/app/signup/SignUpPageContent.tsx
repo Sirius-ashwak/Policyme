@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Logo } from "@/components/ui/Logo";
 
 /** Inline SVG icons */
 function GoogleIcon() {
@@ -59,9 +60,7 @@ export default function SignUpPageContent() {
                 {/* Logo & Header */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-12 h-12 primary-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 mb-5">
-                        <span className="material-symbols-outlined text-white text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                            shield_with_heart
-                        </span>
+                        <Logo className="w-7 h-7 text-white" />
                     </div>
                     <h1 className="text-[28px] font-semibold tracking-tight text-[#1d1d1f] dark:text-[#f5f5f7] font-[Manrope]">
                         Create your account

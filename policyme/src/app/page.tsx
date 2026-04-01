@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
+import { Logo } from "@/components/ui/Logo";
 
 export default function LandingPage() {
     return (
@@ -9,7 +10,12 @@ export default function LandingPage() {
             {/* Nav */}
             <nav className="fixed top-0 w-full z-50 glass-header shadow-[0_1px_0_0_rgba(0,0,0,0.05)] h-16">
                 <div className="flex justify-between items-center h-full px-8 max-w-7xl mx-auto">
-                    <span className="text-xl font-extrabold tracking-tighter">AIGIS</span>
+                    <Link href="/" className="flex items-center gap-2">
+                        <div className="w-8 h-8 primary-gradient rounded-lg flex items-center justify-center shadow-md shadow-blue-200/50">
+                            <Logo className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="text-xl font-extrabold tracking-tighter">InsurAI</span>
+                    </Link>
                     <div className="hidden md:flex items-center gap-8">
                         <a href="#" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Solution</a>
                         <a href="#" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Technology</a>
@@ -91,7 +97,7 @@ export default function LandingPage() {
                     The GraphRAG Advantage
                 </p>
                 <p className="text-center text-xs text-[var(--insurai-outline)] mt-1 max-w-lg mx-auto">
-                    Traditional LLMs estimate answers. AIGIS retrieves factual, structural evidence, mapping every claim to a specific policy node.
+                    Traditional LLMs estimate answers. InsurAI retrieves factual, structural evidence, mapping every claim to a specific policy node.
                 </p>
             </section>
 
@@ -108,7 +114,7 @@ export default function LandingPage() {
                             Period.
                         </h2>
                         <p className="text-sm text-[var(--insurai-on-surface-variant)] leading-relaxed">
-                            Our deterministic engine cross-references queries against an immutable knowledge graph of your policy ecosystem. If it&apos;s not in the data, AIGIS won&apos;t invent it.
+                            Our deterministic engine cross-references queries against an immutable knowledge graph of your policy ecosystem. If it&apos;s not in the data, InsurAI won&apos;t invent it.
                         </p>
                     </div>
                     <div className="flex items-center justify-center">
@@ -152,7 +158,7 @@ export default function LandingPage() {
                     <div className="bg-[var(--insurai-surface-container-lowest)] p-8 rounded-2xl ghost-border text-left">
                         <div className="flex items-center gap-2 mb-4">
                             <span className="w-2 h-2 bg-green-500 rounded-full" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-green-600 font-[Inter]">AIGIS AI</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-green-600 font-[Inter]">InsurAI</span>
                         </div>
                         <p className="text-sm text-[var(--insurai-on-surface-variant)] italic mb-4">
                             &quot;Is water damage covered?&quot;
@@ -218,7 +224,7 @@ export default function LandingPage() {
             <footer className="border-t border-[var(--insurai-surface-container-high)] px-8 py-12">
                 <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8">
                     <div className="col-span-2 md:col-span-1">
-                        <p className="text-lg font-extrabold tracking-tighter mb-3">AIGIS</p>
+                        <p className="text-lg font-extrabold tracking-tighter mb-3">InsurAI</p>
                         <p className="text-xs text-[var(--insurai-on-surface-variant)] leading-relaxed">
                             Engineering trust through deterministic GraphRAG-driven knowledge mapping.
                         </p>
@@ -241,7 +247,7 @@ export default function LandingPage() {
                     ))}
                 </div>
                 <div className="max-w-6xl mx-auto mt-12 pt-6 border-t border-[var(--insurai-surface-container-high)] flex justify-between items-center">
-                    <p className="text-xs text-[var(--insurai-outline)]">© 2024 AIGIS. Engineering Truth.</p>
+                    <p className="text-xs text-[var(--insurai-outline)]">© 2024 InsurAI. Engineering Truth.</p>
                     <div className="flex gap-4 text-xs text-[var(--insurai-outline)]">
                         <a href="#" className="hover:text-[var(--insurai-on-surface)] transition-colors">Twitter</a>
                         <a href="#" className="hover:text-[var(--insurai-on-surface)] transition-colors">LinkedIn</a>
