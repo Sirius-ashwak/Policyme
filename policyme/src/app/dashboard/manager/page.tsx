@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
     FileText,
     ShieldCheck,
@@ -19,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import MacroGraph from "@/components/GraphVisualization";
+import { toast } from "sonner";
 
 const kpis = [
     { title: "Total Policies", value: "247", icon: FileText, color: "text-blue-500", trend: "+12 this month" },
@@ -35,6 +37,28 @@ const conflicts = [
 ];
 
 export default function ManagerDashboard() {
+    const router = useRouter();
+
+    const openKpiTarget = (title: string) => {
+        if (title === "Active Conflicts") {
+            router.push("/dashboard/manager/conflicts");
+            return;
+        }
+
+        if (title === "Searches (30d)") {
+            router.push("/dashboard/manager/reports");
+            return;
+        }
+
+        toast("KPI drill-down queued", {
+            description: `${title} detail dashboard is loading in a future release.`,
+        });
+    };
+
+    const openConflict = (conflictId: string) => {
+        router.push(`/dashboard/manager/conflicts?focus=${encodeURIComponent(conflictId)}`);
+    };
+
     return (
         <div className="flex-1 p-6 md:p-10 w-full space-y-8">
             <div>
@@ -49,7 +73,8 @@ export default function ManagerDashboard() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: i * 0.1 }}
-                        className="rounded-xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-all relative overflow-hidden group"
+                        onClick={() => openKpiTarget(kpi.title)}
+                        className="rounded-xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-all relative overflow-hidden group cursor-pointer"
                     >
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                             <kpi.icon className={`h-16 w-16 ${kpi.color}`} />
@@ -122,7 +147,12 @@ export default function ManagerDashboard() {
                                     {conflict.docs}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                        onClick={() => openConflict(conflict.id)}
+                                        variant="ghost"
+                                        size="icon"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
                                         <Eye className="h-4 w-4" />
                                     </Button>
                                 </TableCell>

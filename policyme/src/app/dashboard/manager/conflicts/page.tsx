@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { AlertTriangle, BookOpen, CheckCircle2, ChevronRight, XCircle } from "lucide-react";
+import { AlertTriangle, BookOpen, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ConflictsPage() {
+    const searchParams = useSearchParams();
     const [resolved, setResolved] = useState<string[]>([]);
+    const focusedConflictId = searchParams.get("focus");
 
     const conflicts = [
         {
@@ -43,9 +47,25 @@ export default function ConflictsPage() {
     ];
 
     const handleResolve = (id: string, resolution: "A" | "B") => {
+        if (resolved.includes(id)) {
+            return;
+        }
+
         setResolved([...resolved, id]);
-        // In a real app, this would send a mutation to the backend to update the Graph knowledge base
+        toast.success(`${id} resolved with Source ${resolution}.`, {
+            description: "Knowledge graph updates have been queued.",
+        });
     };
+
+    useEffect(() => {
+        if (!focusedConflictId) {
+            return;
+        }
+
+        toast(`Focused conflict: ${focusedConflictId}`, {
+            description: "Review this item and choose the preferred policy source.",
+        });
+    }, [focusedConflictId]);
 
     return (
         <div className="space-y-6">
@@ -66,7 +86,11 @@ export default function ConflictsPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className="rounded-xl border border-destructive/20 bg-destructive/5 overflow-hidden"
+                            className={`rounded-xl border overflow-hidden ${
+                                focusedConflictId === conflict.id
+                                    ? "border-primary/40 ring-2 ring-primary/20"
+                                    : "border-destructive/20"
+                            } bg-destructive/5`}
                         >
                             <div className="p-4 border-b border-destructive/10 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -96,7 +120,7 @@ export default function ConflictsPage() {
                                         <span className="text-xs text-muted-foreground ml-auto">{conflict.sourceA.section}</span>
                                     </div>
                                     <p className="text-sm text-muted-foreground italic bg-muted p-3 rounded-md flex-1">
-                                        "{conflict.sourceA.text}"
+                                        &ldquo;{conflict.sourceA.text}&rdquo;
                                     </p>
                                     <button
                                         onClick={() => handleResolve(conflict.id, "A")}
@@ -114,7 +138,7 @@ export default function ConflictsPage() {
                                         <span className="text-xs text-muted-foreground ml-auto">{conflict.sourceB.section}</span>
                                     </div>
                                     <p className="text-sm text-muted-foreground italic bg-muted p-3 rounded-md flex-1">
-                                        "{conflict.sourceB.text}"
+                                        &ldquo;{conflict.sourceB.text}&rdquo;
                                     </p>
                                     <button
                                         onClick={() => handleResolve(conflict.id, "B")}
