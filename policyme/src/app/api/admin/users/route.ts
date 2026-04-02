@@ -1,66 +1,92 @@
-import { NextResponse } from "next/server";
-import { Client } from "@microsoft/microsoft-graph-client";
-import { ConfidentialClientApplication } from "@azure/msal-node";
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseAdminClient } from "@/config/supabaseServer";
 
-// Requires AZURE_AD_CLIENT_ID, AZURE_AD_CLIENT_SECRET, AZURE_AD_TENANT_ID in .env.local
-const msalConfig = {
-    auth: {
-        clientId: process.env.AZURE_AD_CLIENT_ID!,
-        clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-        authority: `https://login.microsoftonline.com/${process.env.AZURE_AD_TENANT_ID}`,
-    }
+type AppUserRow = {
+    id: string;
+    full_name: string | null;
+    email: string;
+    role: string | null;
+    department: string | null;
+    status: string | null;
+    last_activity_at: string | null;
 };
 
-const cca = new ConfidentialClientApplication(msalConfig);
+const DEFAULT_LIMIT = 100;
+const MAX_LIMIT = 500;
 
-export async function GET() {
+function parseLimit(req: NextRequest): number {
+    const raw = req.nextUrl.searchParams.get("limit");
+    if (!raw) {
+        return DEFAULT_LIMIT;
+    }
+
+    const parsed = Number.parseInt(raw, 10);
+    if (Number.isNaN(parsed) || parsed <= 0) {
+        return DEFAULT_LIMIT;
+    }
+
+    return Math.min(parsed, MAX_LIMIT);
+}
+
+function fallbackName(email: string): string {
+    const localPart = email.split("@")[0];
+    if (!localPart) {
+        return "Unknown User";
+    }
+
+    return localPart
+        .split(/[._-]/)
+        .filter(Boolean)
+        .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+        .join(" ");
+}
+
+function mapRole(role: string | null): string {
+    if (!role) {
+        return "Unassigned";
+    }
+
+    return role
+        .replace(/[_-]+/g, " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export async function GET(req: NextRequest) {
     try {
-        const tenantId = process.env.AZURE_AD_TENANT_ID;
-        if (!tenantId || tenantId === "common") {
-            throw new Error("You must set a specific AZURE_AD_TENANT_ID in .env.local (a GUID), not 'common', for the background sync to work.");
+        const limit = parseLimit(req);
+        const supabase = getSupabaseAdminClient();
+
+        const { data, error } = await supabase
+            .from("app_users")
+            .select("id, full_name, email, role, department, status, last_activity_at")
+            .order("last_activity_at", { ascending: false, nullsFirst: false })
+            .limit(limit);
+
+        if (error) {
+            throw new Error(`Supabase query failed: ${error.message}`);
         }
 
-        // Attempt to fetch an application Token (Client Credentials Flow)
-        // This requires "User.Read.All" Application Permission configured in Azure AD
-        const authResponse = await cca.acquireTokenByClientCredential({
-            scopes: ["https://graph.microsoft.com/.default"],
-        });
+        const users = (data as AppUserRow[] | null)?.map((user) => ({
+            id: user.id,
+            name: user.full_name || fallbackName(user.email),
+            email: user.email,
+            role: mapRole(user.role),
+            department: user.department || "Organization",
+            status: user.status || "Active",
+            lastActivityAt: user.last_activity_at,
+        })) || [];
 
-        if (!authResponse?.accessToken) {
-            throw new Error("Could not acquire an App access token.");
-        }
+        return NextResponse.json({ users, source: "supabase" }, { status: 200 });
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.error("Supabase admin users API error:", message);
 
-        const client = Client.init({
-            authProvider: (done) => {
-                done(null, authResponse.accessToken);
-            }
-        });
-
-        // Query up to 100 users, mapped to the format our frontend table expects
-        const adUsers = await client.api("/users")
-            .select("id,displayName,mail,userPrincipalName,jobTitle")
-            .top(100)
-            .get();
-
-        // Map MsGraph schema to our app's internal user format
-        const mappedUsers = adUsers.value.map((u: any) => ({
-            id: u.id,
-            name: u.displayName,
-            email: u.mail || u.userPrincipalName, 
-            role: "Mapped via AppRole",
-            department: u.jobTitle || "Organization",
-            status: "Active"
-        }));
-
-        return NextResponse.json({ users: mappedUsers }, { status: 200 });
-
-    } catch (err: any) {
-        console.error("Graph API Error:", err.message);
-        
-        // Return structured error fallback to tell UI that Admin Consent is probably missing
-        return NextResponse.json({ 
-            error: "Failed to connect to MS Graph. Did you grant 'User.Read.All' Application permissions and Admin Consent in Azure?",
-            details: err.message
-        }, { status: 500 });
+        return NextResponse.json(
+            {
+                error: "Failed to fetch users from Supabase.",
+                details: message,
+            },
+            { status: 500 }
+        );
     }
 }
