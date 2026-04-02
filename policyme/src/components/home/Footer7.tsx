@@ -7,28 +7,28 @@ const links = [
     {
         title: "Product",
         items: [
-            { label: "Features", href: "#" },
-            { label: "Pricing", href: "#" },
-            { label: "Integrations", href: "#" },
-            { label: "Changelog", href: "#" },
+            { label: "Features", href: "/#solution" },
+            { label: "Pricing", href: "/#pricing" },
+            { label: "Integrations", href: "/support" },
+            { label: "Changelog", href: "/support" },
         ],
     },
     {
         title: "Company",
         items: [
-            { label: "About", href: "#" },
-            { label: "Blog", href: "#" },
-            { label: "Careers", href: "#" },
-            { label: "Contact", href: "#" },
+            { label: "About", href: "/support" },
+            { label: "Blog", href: "/support" },
+            { label: "Careers", href: "/support" },
+            { label: "Contact", href: "/support" },
         ],
     },
     {
         title: "Resources",
         items: [
-            { label: "Documentation", href: "#" },
-            { label: "API Reference", href: "#" },
-            { label: "Support", href: "#" },
-            { label: "Status", href: "#" },
+            { label: "Documentation", href: "/support" },
+            { label: "API Reference", href: "/support" },
+            { label: "Support", href: "/support" },
+            { label: "Status", href: "/support" },
         ],
     },
 ];
@@ -71,13 +71,13 @@ export function Footer7() {
                         © {new Date().getFullYear()} PolicyMe. All rights reserved.
                     </p>
                     <div className="flex gap-6">
-                        <Link href="#" className="font-mono text-[10px] text-muted-foreground hover:text-foreground">
+                        <Link href="/privacy" className="font-mono text-[10px] text-muted-foreground hover:text-foreground">
                             Privacy
                         </Link>
-                        <Link href="#" className="font-mono text-[10px] text-muted-foreground hover:text-foreground">
+                        <Link href="/terms" className="font-mono text-[10px] text-muted-foreground hover:text-foreground">
                             Terms
                         </Link>
-                        <Link href="#" className="font-mono text-[10px] text-muted-foreground hover:text-foreground">
+                        <Link href="/support" className="font-mono text-[10px] text-muted-foreground hover:text-foreground">
                             Security
                         </Link>
                     </div>

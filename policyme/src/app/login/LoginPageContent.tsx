@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -190,18 +191,18 @@ export default function LoginPageContent() {
                 {/* Sign Up Link */}
                 <p className="text-center text-[13px] text-[#86868b] mt-6">
                     Don&apos;t have an account?{" "}
-                    <a href="/signup" className="text-[#0066CC] dark:text-[#2997ff] font-medium hover:underline">
+                    <Link href="/signup" className="text-[#0066CC] dark:text-[#2997ff] font-medium hover:underline">
                         Sign up
-                    </a>
+                    </Link>
                 </p>
 
                 {/* Legal */}
                 <p className="text-center text-[11px] text-[#86868b]/60 mt-4 leading-relaxed">
                     Protected by enterprise-grade encryption.
                     <br />
-                    <a href="#" className="hover:text-[#86868b] transition-colors">Terms</a>
+                    <Link href="/terms" className="hover:text-[#86868b] transition-colors">Terms</Link>
                     {" · "}
-                    <a href="#" className="hover:text-[#86868b] transition-colors">Privacy</a>
+                    <Link href="/privacy" className="hover:text-[#86868b] transition-colors">Privacy</Link>
                 </p>
             </div>
         </div>

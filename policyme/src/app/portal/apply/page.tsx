@@ -37,9 +37,9 @@ export default function NewApplicationPage() {
                             Complete the four steps below to receive your personalized quote and binding agreement.
                         </p>
                     </div>
-                    <button className="px-5 py-2.5 border border-[var(--insurai-outline-variant)]/20 rounded-lg text-sm font-medium text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] transition-all self-start">
+                    <Link href="/portal" className="px-5 py-2.5 border border-[var(--insurai-outline-variant)]/20 rounded-lg text-sm font-medium text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] transition-all self-start">
                         Save for later
-                    </button>
+                    </Link>
                 </div>
 
                 {/* Step Indicator */}
@@ -272,10 +272,10 @@ export default function NewApplicationPage() {
                     </div>
                     <div className="flex items-center gap-4 text-xs text-slate-400">
                         <span>Session ID: AI-2024-X9</span>
-                        <a href="#" className="text-[var(--primary)] font-semibold flex items-center gap-1 hover:underline">
+                        <Link href="/support#faq" className="text-[var(--primary)] font-semibold flex items-center gap-1 hover:underline">
                             View FAQ
                             <span className="material-symbols-outlined text-sm">open_in_new</span>
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </main>

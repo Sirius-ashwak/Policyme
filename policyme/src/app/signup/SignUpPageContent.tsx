@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
 /** Inline SVG icons */
@@ -127,17 +128,17 @@ export default function SignUpPageContent() {
                 {/* Sign In Link */}
                 <p className="text-center text-[13px] text-[#86868b] mt-6">
                     Already have an account?{" "}
-                    <a href="/login" className="text-[#0066CC] dark:text-[#2997ff] font-medium hover:underline">
+                    <Link href="/login" className="text-[#0066CC] dark:text-[#2997ff] font-medium hover:underline">
                         Sign in
-                    </a>
+                    </Link>
                 </p>
 
                 {/* Terms */}
                 <p className="text-center text-[11px] text-[#86868b]/60 mt-4 leading-relaxed max-w-[300px] mx-auto">
                     By creating an account, you agree to our{" "}
-                    <a href="#" className="hover:text-[#86868b] underline transition-colors">Terms of Service</a>
+                    <Link href="/terms" className="hover:text-[#86868b] underline transition-colors">Terms of Service</Link>
                     {" "}and{" "}
-                    <a href="#" className="hover:text-[#86868b] underline transition-colors">Privacy Policy</a>.
+                    <Link href="/privacy" className="hover:text-[#86868b] underline transition-colors">Privacy Policy</Link>.
                 </p>
             </div>
         </div>

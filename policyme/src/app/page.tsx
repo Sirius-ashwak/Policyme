@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Navbar } from "@/components/layout/Navbar";
 import { Logo } from "@/components/ui/Logo";
 
 export default function LandingPage() {
@@ -17,10 +16,10 @@ export default function LandingPage() {
                         <span className="text-xl font-extrabold tracking-tighter">InsurAI</span>
                     </Link>
                     <div className="hidden md:flex items-center gap-8">
-                        <a href="#" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Solution</a>
-                        <a href="#" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Technology</a>
-                        <a href="#" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Pricing</a>
-                        <a href="#" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Support</a>
+                        <a href="#solution" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Solution</a>
+                        <a href="#technology" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Technology</a>
+                        <a href="#pricing" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Pricing</a>
+                        <a href="/support" className="text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">Support</a>
                     </div>
                     <Link href="/portal" className="px-5 py-2.5 primary-gradient text-white rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] active:scale-95 transition-all">
                         Get Started
@@ -53,7 +52,7 @@ export default function LandingPage() {
             </section>
 
             {/* Product Preview */}
-            <section className="px-8 max-w-5xl mx-auto mb-32">
+            <section id="solution" className="px-8 max-w-5xl mx-auto mb-32">
                 <div className="bg-slate-900 rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-2xl">
                     <div className="grid grid-cols-2 gap-8">
                         <div className="space-y-4">
@@ -102,7 +101,7 @@ export default function LandingPage() {
             </section>
 
             {/* Zero Hallucination Section */}
-            <section className="px-8 max-w-6xl mx-auto mb-32">
+            <section id="technology" className="px-8 max-w-6xl mx-auto mb-32">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
                     <div>
                         <p className="text-xs font-bold uppercase tracking-widest text-[var(--insurai-tertiary)] mb-4 font-[Inter]">
@@ -202,7 +201,7 @@ export default function LandingPage() {
             </section>
 
             {/* CTA */}
-            <section className="px-8 max-w-4xl mx-auto mb-32">
+            <section id="pricing" className="px-8 max-w-4xl mx-auto mb-32">
                 <div className="bg-[var(--primary)] text-white rounded-3xl p-12 md:p-16 text-center relative overflow-hidden">
                     <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter font-[Manrope] mb-8 relative z-10">
                         Experience the truth.
@@ -238,7 +237,21 @@ export default function LandingPage() {
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--insurai-on-surface-variant)] mb-3">{col.title}</p>
                             <div className="space-y-2">
                                 {col.links.map((link) => (
-                                    <a key={link} href="#" className="block text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">
+                                    <a
+                                        key={link}
+                                        href={{
+                                            Solution: "#solution",
+                                            Technology: "#technology",
+                                            API: "/support",
+                                            About: "/support",
+                                            Insights: "/support",
+                                            Careers: "/support",
+                                            Privacy: "/privacy",
+                                            Security: "/support",
+                                            Terms: "/terms",
+                                        }[link] || "/support"}
+                                        className="block text-sm text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors"
+                                    >
                                         {link}
                                     </a>
                                 ))}
@@ -249,8 +262,8 @@ export default function LandingPage() {
                 <div className="max-w-6xl mx-auto mt-12 pt-6 border-t border-[var(--insurai-surface-container-high)] flex justify-between items-center">
                     <p className="text-xs text-[var(--insurai-outline)]">© 2024 InsurAI. Engineering Truth.</p>
                     <div className="flex gap-4 text-xs text-[var(--insurai-outline)]">
-                        <a href="#" className="hover:text-[var(--insurai-on-surface)] transition-colors">Twitter</a>
-                        <a href="#" className="hover:text-[var(--insurai-on-surface)] transition-colors">LinkedIn</a>
+                        <a href="https://x.com" target="_blank" rel="noreferrer" className="hover:text-[var(--insurai-on-surface)] transition-colors">Twitter</a>
+                        <a href="https://www.linkedin.com" target="_blank" rel="noreferrer" className="hover:text-[var(--insurai-on-surface)] transition-colors">LinkedIn</a>
                     </div>
                 </div>
             </footer>
