@@ -1,11 +1,65 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { type ChangeEvent, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function KnowledgeGraphPage() {
+    const router = useRouter();
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [isReindexing, setIsReindexing] = useState(false);
+    const [isRefreshingVectors, setIsRefreshingVectors] = useState(false);
+
+    const reindexNodes = async () => {
+        if (isReindexing) {
+            return;
+        }
+
+        setIsReindexing(true);
+        await toast.promise(new Promise((resolve) => setTimeout(resolve, 1500)), {
+            loading: "Reindexing graph nodes...",
+            success: "Node reindex completed and cache warmed.",
+            error: "Node reindex failed",
+        });
+        setIsReindexing(false);
+    };
+
+    const uploadDocuments = () => {
+        fileInputRef.current?.click();
+    };
+
+    const onFilesSelected = (event: ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+
+        if (!files || files.length === 0) {
+            return;
+        }
+
+        toast.success(`Queued ${files.length} document(s) for ingestion.`);
+        event.target.value = "";
+    };
+
+    const openProcessingHistory = () => {
+        router.push("/dashboard/admin/audit");
+    };
+
+    const refreshGlobalVectors = async () => {
+        if (isRefreshingVectors) {
+            return;
+        }
+
+        setIsRefreshingVectors(true);
+        await toast.promise(new Promise((resolve) => setTimeout(resolve, 2000)), {
+            loading: "Refreshing global vectors across clusters...",
+            success: "Global vector refresh completed.",
+            error: "Vector refresh failed",
+        });
+        setIsRefreshingVectors(false);
+    };
+
     return (
         <div className="flex-1 w-full bg-[var(--insurai-surface)] font-['Manrope'] px-6 md:px-10 py-12">
+            <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.txt" className="hidden" onChange={onFilesSelected} />
             
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
@@ -19,11 +73,17 @@ export default function KnowledgeGraphPage() {
                 </div>
                 
                 <div className="flex items-center gap-3">
-                    <button className="px-5 py-2.5 rounded-xl text-[10px] font-bold tracking-widest bg-[var(--insurai-surface-container-low)] text-[var(--insurai-on-surface)] border border-[var(--insurai-outline-variant)]/20 hover:bg-[var(--insurai-surface-container)] transition-colors uppercase flex items-center gap-2">
+                    <button
+                        onClick={reindexNodes}
+                        className="px-5 py-2.5 rounded-xl text-[10px] font-bold tracking-widest bg-[var(--insurai-surface-container-low)] text-[var(--insurai-on-surface)] border border-[var(--insurai-outline-variant)]/20 hover:bg-[var(--insurai-surface-container)] transition-colors uppercase flex items-center gap-2"
+                    >
                         <span className="material-symbols-outlined text-[16px]">sync</span>
-                        Reindex Nodes
+                        {isReindexing ? "Reindexing..." : "Reindex Nodes"}
                     </button>
-                    <button className="px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest bg-[var(--primary)] text-white hover:bg-[var(--insurai-primary-container)] transition-all flex items-center gap-2 shadow-lg hover:shadow-xl shadow-[var(--primary)]/20 uppercase border border-[var(--primary)]/50">
+                    <button
+                        onClick={uploadDocuments}
+                        className="px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest bg-[var(--primary)] text-white hover:bg-[var(--insurai-primary-container)] transition-all flex items-center gap-2 shadow-lg hover:shadow-xl shadow-[var(--primary)]/20 uppercase border border-[var(--primary)]/50"
+                    >
                         <span className="material-symbols-outlined text-[16px] animate-[spin_4s_linear_infinite]">upload_file</span>
                         Upload Documents
                     </button>
@@ -192,19 +252,27 @@ export default function KnowledgeGraphPage() {
                             </div>
                         </div>
 
-                        <button className="w-full mt-6 py-2.5 rounded-lg border border-[var(--insurai-outline-variant)]/20 text-xs font-bold font-['Inter'] text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] transition-colors">
+                        <button
+                            onClick={openProcessingHistory}
+                            className="w-full mt-6 py-2.5 rounded-lg border border-[var(--insurai-outline-variant)]/20 text-xs font-bold font-['Inter'] text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] transition-colors"
+                        >
                             View Processing History
                         </button>
                     </div>
 
                     {/* Massive Action Button */}
-                    <div className="bg-gradient-to-br from-[#003B91] to-[#0054d6] rounded-2xl p-6 relative overflow-hidden text-white shadow-[0_15px_30px_rgba(0,82,209,0.3)] hover:scale-[1.02] active:scale-95 transition-all cursor-pointer group">
+                    <div
+                        onClick={refreshGlobalVectors}
+                        className="bg-gradient-to-br from-[#003B91] to-[#0054d6] rounded-2xl p-6 relative overflow-hidden text-white shadow-[0_15px_30px_rgba(0,82,209,0.3)] hover:scale-[1.02] active:scale-95 transition-all cursor-pointer group"
+                    >
                         <div className="relative z-10 flex flex-col justify-between h-full">
                             <span className="material-symbols-outlined text-4xl mb-4 group-hover:rotate-180 transition-transform duration-700">cached</span>
                             <div>
                                 <h4 className="text-xl font-bold font-['Manrope'] mb-1">Global Vector Refresh</h4>
                                 <p className="text-xs font-medium font-['Inter'] opacity-80 leading-snug">
-                                    Force sync all LLM embeddings against Neo4j production cluster.
+                                    {isRefreshingVectors
+                                        ? "Refreshing embeddings across all clusters..."
+                                        : "Force sync all LLM embeddings against Neo4j production cluster."}
                                 </p>
                             </div>
                         </div>

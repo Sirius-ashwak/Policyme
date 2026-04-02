@@ -1,9 +1,68 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function SystemMonitoringPage() {
+    const router = useRouter();
+    const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("24h");
+    const [logFilter, setLogFilter] = useState<"SYSTEM" | "GRAPH" | "ERROR">("ERROR");
+
+    const logEntries = [
+        {
+            id: "LOG-1021",
+            timestamp: "2023-11-24 14:02:11",
+            component: "LLM-Cluster-02",
+            event: "Model quantization swap completed successfully.",
+            status: "SUCCESS" as const,
+        },
+        {
+            id: "LOG-1020",
+            timestamp: "2023-11-24 13:58:45",
+            component: "Neo4j-Primary",
+            event: "Memory pressure detected on index \"Policy_Vector\".",
+            status: "WARNING" as const,
+        },
+        {
+            id: "LOG-1019",
+            timestamp: "2023-11-24 13:42:02",
+            component: "API-Gateway-US",
+            event: "High latency detected in US-East region (240ms).",
+            status: "CRITICAL" as const,
+        },
+    ];
+
+    const filteredLogs = logEntries.filter((entry) => {
+        if (logFilter === "GRAPH") {
+            return entry.component.includes("Neo4j");
+        }
+
+        if (logFilter === "ERROR") {
+            return entry.status === "WARNING" || entry.status === "CRITICAL";
+        }
+
+        return true;
+    });
+
+    const toggleTimeRange = () => {
+        setTimeRange((current) => {
+            const nextRange = current === "24h" ? "7d" : current === "7d" ? "30d" : "24h";
+            toast.success(`Monitoring range set to ${nextRange.toUpperCase()}.`);
+            return nextRange;
+        });
+    };
+
+    const openSchema = () => {
+        router.push("/dashboard/admin/graph");
+    };
+
+    const openLogDetails = (entryId: string) => {
+        toast("Opening log detail panel", {
+            description: `${entryId} has been expanded for investigation.`,
+        });
+    };
+
     return (
         <div className="flex-1 w-full bg-[var(--insurai-surface)] font-['Manrope'] px-6 md:px-10 py-12">
             
@@ -24,12 +83,15 @@ export default function SystemMonitoringPage() {
                             OPERATIONAL
                         </span>
                     </div>
-                    <div className="bg-[var(--insurai-surface-container-lowest)] shadow-[0_2px_4px_rgba(0,0,0,0.02)] px-4 py-2 rounded-lg border border-[var(--insurai-outline-variant)]/15 flex items-center gap-2">
+                    <button
+                        onClick={toggleTimeRange}
+                        className="bg-[var(--insurai-surface-container-lowest)] shadow-[0_2px_4px_rgba(0,0,0,0.02)] px-4 py-2 rounded-lg border border-[var(--insurai-outline-variant)]/15 flex items-center gap-2"
+                    >
                         <span className="material-symbols-outlined text-slate-400 text-sm">calendar_today</span>
                         <span className="text-xs font-['Inter'] font-medium uppercase tracking-wider text-[var(--insurai-on-surface)]">
-                            Last 24 Hours
+                            Last {timeRange === "24h" ? "24 Hours" : timeRange === "7d" ? "7 Days" : "30 Days"}
                         </span>
-                    </div>
+                    </button>
                 </div>
             </div>
 
@@ -261,7 +323,10 @@ export default function SystemMonitoringPage() {
                         </div>
                     </div>
                     
-                    <button className="w-full mt-auto text-sm font-bold text-[var(--primary)] hover:bg-[var(--primary)]/5 py-3 rounded-lg border border-[var(--primary)]/20 transition-colors">
+                    <button
+                        onClick={openSchema}
+                        className="w-full mt-auto text-sm font-bold text-[var(--primary)] hover:bg-[var(--primary)]/5 py-3 rounded-lg border border-[var(--primary)]/20 transition-colors"
+                    >
                         View Complete Schema
                     </button>
                 </div>
@@ -271,9 +336,19 @@ export default function SystemMonitoringPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                         <h4 className="text-xl font-bold font-['Manrope']">Infrastructure Logs</h4>
                         <div className="flex gap-2">
-                            <span className="px-3 py-1.5 rounded-full bg-[var(--insurai-surface-container-low)] text-[10px] font-bold text-[var(--insurai-on-surface-variant)] cursor-pointer hover:bg-[var(--insurai-surface-container)] transition-colors">SYSTEM</span>
-                            <span className="px-3 py-1.5 rounded-full bg-[var(--insurai-surface-container-low)] text-[10px] font-bold text-[var(--insurai-on-surface-variant)] cursor-pointer hover:bg-[var(--insurai-surface-container)] transition-colors">GRAPH</span>
-                            <span className="px-3 py-1.5 rounded-full bg-[var(--primary)] text-[10px] font-bold text-white cursor-pointer shadow-md shadow-[var(--primary)]/20">ERROR</span>
+                            {(["SYSTEM", "GRAPH", "ERROR"] as const).map((filter) => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setLogFilter(filter)}
+                                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
+                                        logFilter === filter
+                                            ? "bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/20"
+                                            : "bg-[var(--insurai-surface-container-low)] text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container)]"
+                                    }`}
+                                >
+                                    {filter}
+                                </button>
+                            ))}
                         </div>
                     </div>
                     
@@ -289,53 +364,57 @@ export default function SystemMonitoringPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--insurai-outline-variant)]/10">
-                                <tr className="hover:bg-[var(--insurai-surface-container-low)]/50 transition-colors group">
-                                    <td className="px-6 py-4 text-xs font-['Inter'] font-semibold text-[var(--insurai-on-surface-variant)]">2023-11-24 14:02:11</td>
-                                    <td className="px-6 py-4 text-xs font-bold text-[var(--insurai-on-surface)]">LLM-Cluster-02</td>
-                                    <td className="px-6 py-4 text-xs font-['Inter'] text-[var(--insurai-on-surface-variant)]">Model quantization swap completed successfully.</td>
-                                    <td className="px-6 py-4">
-                                        <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded w-fit">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400"></span> SUCCESS
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <button className="text-[var(--primary)] opacity-0 group-hover:opacity-100 transition-opacity bg-[var(--primary)]/10 p-1.5 rounded-md hover:bg-[var(--primary)]/20">
-                                            <span className="material-symbols-outlined text-[18px]">read_more</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                                
-                                <tr className="hover:bg-[var(--insurai-surface-container-low)]/50 transition-colors group">
-                                    <td className="px-6 py-4 text-xs font-['Inter'] font-semibold text-[var(--insurai-on-surface-variant)]">2023-11-24 13:58:45</td>
-                                    <td className="px-6 py-4 text-xs font-bold text-[var(--insurai-on-surface)]">Neo4j-Primary</td>
-                                    <td className="px-6 py-4 text-xs font-['Inter'] text-[var(--insurai-on-surface-variant)]">Memory pressure detected on index "Policy_Vector".</td>
-                                    <td className="px-6 py-4">
-                                        <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded w-fit">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse"></span> WARNING
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <button className="text-[var(--primary)] opacity-0 group-hover:opacity-100 transition-opacity bg-[var(--primary)]/10 p-1.5 rounded-md hover:bg-[var(--primary)]/20">
-                                            <span className="material-symbols-outlined text-[18px]">read_more</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                                
-                                <tr className="hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-colors group relative border-l-2 border-l-red-500">
-                                    <td className="px-6 py-4 text-xs font-['Inter'] font-semibold text-[var(--insurai-on-surface-variant)]">2023-11-24 13:42:02</td>
-                                    <td className="px-6 py-4 text-xs font-bold text-[var(--insurai-on-surface)]">API-Gateway-US</td>
-                                    <td className="px-6 py-4 text-xs font-['Inter'] text-[var(--insurai-on-surface-variant)]">High latency detected in US-East region (240ms).</td>
-                                    <td className="px-6 py-4">
-                                        <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40 px-2 py-1 rounded w-fit">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400"></span> CRITICAL
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <button className="text-[var(--primary)] opacity-0 group-hover:opacity-100 transition-opacity bg-[var(--primary)]/10 p-1.5 rounded-md hover:bg-[var(--primary)]/20">
-                                            <span className="material-symbols-outlined text-[18px]">read_more</span>
-                                        </button>
-                                    </td>
-                                </tr>
+                                {filteredLogs.map((entry) => (
+                                    <tr
+                                        key={entry.id}
+                                        className={`transition-colors group ${
+                                            entry.status === "CRITICAL"
+                                                ? "hover:bg-red-50/50 dark:hover:bg-red-900/20 relative border-l-2 border-l-red-500"
+                                                : "hover:bg-[var(--insurai-surface-container-low)]/50"
+                                        }`}
+                                    >
+                                        <td className="px-6 py-4 text-xs font-['Inter'] font-semibold text-[var(--insurai-on-surface-variant)]">{entry.timestamp}</td>
+                                        <td className="px-6 py-4 text-xs font-bold text-[var(--insurai-on-surface)]">{entry.component}</td>
+                                        <td className="px-6 py-4 text-xs font-['Inter'] text-[var(--insurai-on-surface-variant)]">{entry.event}</td>
+                                        <td className="px-6 py-4">
+                                            <span
+                                                className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded w-fit ${
+                                                    entry.status === "SUCCESS"
+                                                        ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30"
+                                                        : entry.status === "WARNING"
+                                                            ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30"
+                                                            : "text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40"
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`w-1.5 h-1.5 rounded-full ${
+                                                        entry.status === "SUCCESS"
+                                                            ? "bg-emerald-600 dark:bg-emerald-400"
+                                                            : entry.status === "WARNING"
+                                                                ? "bg-amber-600 dark:bg-amber-400 animate-pulse"
+                                                                : "bg-red-600 dark:bg-red-400"
+                                                    }`}
+                                                ></span>
+                                                {entry.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <button
+                                                onClick={() => openLogDetails(entry.id)}
+                                                className="text-[var(--primary)] opacity-0 group-hover:opacity-100 transition-opacity bg-[var(--primary)]/10 p-1.5 rounded-md hover:bg-[var(--primary)]/20"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">read_more</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredLogs.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-sm text-[var(--insurai-on-surface-variant)]">
+                                            No logs found for the selected filter.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
