@@ -32,9 +32,43 @@ export function VoiceAssistant() {
     const [transcript, setTranscript] = useState("");
     const [response, setResponse] = useState("");
     const [showTranscript, setShowTranscript] = useState(false);
+    const [isThinking, setIsThinking] = useState(false);
+    const [voiceError, setVoiceError] = useState("");
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number>(0);
     const orbPhaseRef = useRef(0);
+
+    const askPolicyAI = async (query: string) => {
+        setIsThinking(true);
+        setVoiceError("");
+
+        try {
+            const res = await fetch("/api/query", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    query,
+                    userId: `voice_${currentLang.code}`,
+                    chat_history: [
+                        { role: "user", content: query },
+                    ],
+                }),
+            });
+
+            const payload = await res.json().catch(() => ({} as { error?: string; answer?: string }));
+            if (!res.ok) {
+                throw new Error(payload.error || "The AI service is unavailable.");
+            }
+
+            setResponse(payload.answer || "I could not find enough policy context to answer that confidently.");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unable to process your question right now.";
+            setResponse("I could not complete that request right now. Please try again.");
+            setVoiceError(message);
+        } finally {
+            setIsThinking(false);
+        }
+    };
 
     // Orb animation (inspired by ChatGPT/Gemini voice orb)
     useEffect(() => {
@@ -123,26 +157,25 @@ export function VoiceAssistant() {
     const toggleListening = () => {
         if (isListening) {
             setIsListening(false);
-            setTranscript("What's covered under my auto policy deductible?");
-            setResponse(
-                "Your Tesla Model 3 auto policy (AU-82910-XM) has a $500 deductible for collision and a $250 deductible for comprehensive coverage. This means you'll pay the first $500 for collision-related repairs before insurance covers the rest."
-            );
+            const fallbackTranscript = transcript || "What's covered under my auto policy deductible?";
+            setTranscript(fallbackTranscript);
             setShowTranscript(true);
+            void askPolicyAI(fallbackTranscript);
         } else {
             setIsListening(true);
             setTranscript("");
             setResponse("");
+            setVoiceError("");
             setShowTranscript(false);
         }
     };
 
     const handleQueryClick = (query: string) => {
         setTranscript(query);
-        setResponse(
-            "Let me look that up for you... Based on your policy documents, I've found the relevant information. Your coverage details are being retrieved from our GraphRAG knowledge base."
-        );
         setShowTranscript(true);
         setIsListening(false);
+        setResponse("");
+        void askPolicyAI(query);
     };
 
     return (
@@ -251,6 +284,8 @@ export function VoiceAssistant() {
                                     setIsListening(false);
                                     setShowLangPicker(false);
                                     setShowTranscript(false);
+                                    setIsThinking(false);
+                                    setVoiceError("");
                                     setTranscript("");
                                     setResponse("");
                                 }}
@@ -298,7 +333,9 @@ export function VoiceAssistant() {
                         <p className={`text-white/50 text-sm font-medium mt-2 transition-all duration-500 ${
                             showTranscript ? "opacity-0 -translate-y-4" : "opacity-100"
                         }`}>
-                            {isListening
+                            {isThinking
+                                ? "Analyzing policy graph..."
+                                : isListening
                                 ? "I'm listening... speak now"
                                 : "Tap the orb to start speaking"}
                         </p>
@@ -321,7 +358,10 @@ export function VoiceAssistant() {
                                             </div>
                                             <span className="text-blue-400 text-[10px] font-bold uppercase tracking-widest font-[Inter]">InsurAI</span>
                                         </div>
-                                        <p className="text-white/80 text-sm leading-relaxed">{response}</p>
+                                        <p className="text-white/80 text-sm leading-relaxed">{isThinking ? "Analyzing your request..." : response}</p>
+                                        {voiceError && (
+                                            <p className="text-red-300 text-xs mt-2">{voiceError}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -364,7 +404,16 @@ export function VoiceAssistant() {
                                 </span>
                             </button>
 
-                            <button className="w-14 h-14 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white flex items-center justify-center transition-all">
+                            <button
+                                onClick={() => {
+                                    const typedQuery = window.prompt("Ask InsurAI a policy question:");
+                                    if (!typedQuery || !typedQuery.trim()) {
+                                        return;
+                                    }
+                                    handleQueryClick(typedQuery.trim());
+                                }}
+                                className="w-14 h-14 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white flex items-center justify-center transition-all"
+                            >
                                 <span className="material-symbols-outlined text-xl">keyboard</span>
                             </button>
                         </div>
