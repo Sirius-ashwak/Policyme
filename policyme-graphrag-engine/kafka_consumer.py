@@ -50,7 +50,7 @@ def parse_float(value: str, default: float) -> float:
 
 
 APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
-ENABLE_MOCKS = parse_bool(os.getenv("ENABLE_MOCKS"), default=True)
+ENABLE_MOCKS = parse_bool(os.getenv("ENABLE_MOCKS"), default=False)
 ALLOW_MOCKS = APP_ENV == "local" and ENABLE_MOCKS
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
@@ -262,6 +262,8 @@ async def run_kafka_consumer():
     Continuously listens for DocumentEvent messages from the Spring Boot API.
     """
     if not KAFKA_AVAILABLE:
+        if not ALLOW_MOCKS:
+            raise RuntimeError("aiokafka is required in real mode. Install dependencies and retry.")
         logger.info("[MOCK MODE] Kafka consumer running in simulation mode.")
         logger.info("Would connect to: %s", KAFKA_BOOTSTRAP_SERVERS)
         logger.info("Would subscribe to topic: %s", KAFKA_TOPIC)

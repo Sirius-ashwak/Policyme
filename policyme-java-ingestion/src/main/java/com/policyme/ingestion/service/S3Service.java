@@ -37,12 +37,18 @@ public class S3Service {
     @Value("${aws.s3.secret-key:}")
     private String secretKey;
 
+    @Value("${policyme.runtime.allow-mocks:false}")
+    private boolean allowMocks;
+
     private S3Client s3Client;
     private boolean mockMode = false;
 
     @PostConstruct
     public void init() {
         if (accessKey == null || accessKey.isBlank()) {
+            if (!allowMocks) {
+                throw new IllegalStateException("AWS credentials are required in real mode. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.");
+            }
             log.warn("⚠️ AWS credentials not configured. Running in MOCK S3 mode.");
             mockMode = true;
             return;
@@ -56,6 +62,9 @@ public class S3Service {
                     .build();
             log.info("✅ AWS S3 Client initialized for bucket: {}", bucketName);
         } catch (Exception e) {
+            if (!allowMocks) {
+                throw new IllegalStateException("Failed to initialize AWS S3 Client in real mode.", e);
+            }
             log.warn("⚠️ Failed to initialize AWS S3 Client. Running in MOCK mode. Error: {}", e.getMessage());
             mockMode = true;
         }

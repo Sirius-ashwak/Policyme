@@ -29,7 +29,7 @@ def parse_csv(value: str) -> List[str]:
 
 APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
 STRICT_STARTUP = parse_bool(os.getenv("STRICT_STARTUP"), default=False)
-ENABLE_MOCKS = parse_bool(os.getenv("ENABLE_MOCKS"), default=True)
+ENABLE_MOCKS = parse_bool(os.getenv("ENABLE_MOCKS"), default=False)
 
 default_origins = "http://localhost:3000,http://localhost:3001"
 raw_allowed_origins = os.getenv(
@@ -114,15 +114,17 @@ async def get_embedding(text: str) -> List[float]:
         )
         return response.embeddings[0].values
     except Exception as e:
-        print(f"Gemini Embedding Error: {e}")
-        return []
+        if APP_ENV == "local" and ENABLE_MOCKS:
+            print(f"Gemini Embedding Error (mock mode): {e}")
+            return []
+        raise RuntimeError("Gemini embedding failed and mock fallbacks are disabled.") from e
 
 
 @app.post("/graphrag/query", response_model=QueryResponse)
 async def process_graphrag_query(request: QueryRequest):
     try:
         # Step 0: Embed query using Gemini
-        query_embedding = await get_embedding(request.query)
+        await get_embedding(request.query)
         
         # Step 1: Query Neo4j Graph for relevant clauses
         context_data = await search_neo4j_graph(request.query)

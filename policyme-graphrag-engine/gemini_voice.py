@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
-ENABLE_MOCKS = os.getenv("ENABLE_MOCKS", "true").strip().lower() in {"1", "true", "yes", "on"}
+ENABLE_MOCKS = os.getenv("ENABLE_MOCKS", "false").strip().lower() in {"1", "true", "yes", "on"}
 ALLOW_MOCKS = APP_ENV == "local" and ENABLE_MOCKS
 
 VOICE_RAG_SYSTEM_PROMPT = """

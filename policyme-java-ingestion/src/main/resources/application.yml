@@ -27,6 +27,8 @@ aws:
 
 # Kafka Topic Names
 policyme:
+  runtime:
+    allow-mocks: ${ENABLE_MOCKS:false}
   cors:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001,https://policyme.vercel.app}
     allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}

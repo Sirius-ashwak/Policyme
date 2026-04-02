@@ -6,9 +6,9 @@ load_dotenv()
 
 NEO4J_URI = os.getenv("NEO4J_URI", "neo4j://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "policyme_secret")
 APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
-ENABLE_MOCKS = os.getenv("ENABLE_MOCKS", "true").strip().lower() in {"1", "true", "yes", "on"}
+ENABLE_MOCKS = os.getenv("ENABLE_MOCKS", "false").strip().lower() in {"1", "true", "yes", "on"}
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
