@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/config/supabaseServer";
+import { listAdminUsers } from "@/lib/demo-store";
 
 type AppUserRow = {
     id: string;
@@ -83,10 +84,12 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(
             {
-                error: "Failed to fetch users from Supabase.",
+                users: listAdminUsers(),
+                source: "demo",
+                warning: "Supabase admin users unavailable. Serving demo data instead.",
                 details: message,
             },
-            { status: 500 }
+            { status: 200 }
         );
     }
 }
