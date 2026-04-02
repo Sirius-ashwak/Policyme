@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -20,15 +19,29 @@ const NAV_LINKS: { labelKey: string; href: string; roles: string[] }[] = [
 
 export function Navbar() {
     const { data: session, status } = useSession();
-    const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
     const { t } = useLanguage();
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
     const userRole = session?.user?.role || "";
+    const notificationsHref = session
+        ? {
+            Customer: "/portal/claims",
+            Adjuster: "/dashboard/adjuster/adjudications",
+            Underwriter: "/dashboard/underwriter/assessments",
+            Manager: "/dashboard/manager/conflicts",
+            Admin: "/dashboard/admin/logs",
+        }[userRole] || "/portal"
+        : "/login";
+
+    const settingsHref = session
+        ? {
+            Customer: "/portal/settings",
+            Adjuster: "/dashboard/adjuster/settings",
+            Underwriter: "/dashboard/underwriter/metrics",
+            Manager: "/dashboard/manager/settings",
+            Admin: "/dashboard/admin/settings",
+        }[userRole] || "/portal/settings"
+        : "/login";
 
     // Filter nav links based on user's role
     const visibleLinks = NAV_LINKS.filter(link => link.roles.includes(userRole)).map(link => ({
@@ -52,7 +65,7 @@ export function Navbar() {
                     </Link>
 
                     {/* Role Navigation Tabs — only show links user has access to */}
-                    {mounted && session && (
+                    {session && (
                         <nav className="hidden md:flex items-center gap-6">
                             {visibleLinks.map((link) => (
                                 <Link
@@ -74,20 +87,28 @@ export function Navbar() {
                 {/* Right Side: Actions + User */}
                 <div className="flex items-center gap-3">
                     {/* Language Switcher */}
-                    {mounted && <LanguageSwitcher />}
+                    <LanguageSwitcher />
 
                     {/* Notifications */}
-                    <button className="p-2 text-slate-500 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 rounded-full transition-all duration-200">
+                    <Link
+                        href={notificationsHref}
+                        aria-label="Notifications"
+                        className="p-2 text-slate-500 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 rounded-full transition-all duration-200"
+                    >
                         <span className="material-symbols-outlined">notifications</span>
-                    </button>
+                    </Link>
 
                     {/* Settings */}
-                    <button className="p-2 text-slate-500 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 rounded-full transition-all duration-200">
+                    <Link
+                        href={settingsHref}
+                        aria-label="Settings"
+                        className="p-2 text-slate-500 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 rounded-full transition-all duration-200"
+                    >
                         <span className="material-symbols-outlined">settings</span>
-                    </button>
+                    </Link>
 
                     {/* User Profile / Auth */}
-                    {!mounted || status === "loading" ? (
+                    {status === "loading" ? (
                         <div className="h-8 w-20 animate-pulse bg-slate-200 dark:bg-slate-800 rounded-full" />
                     ) : session ? (
                         <button

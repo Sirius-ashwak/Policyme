@@ -111,6 +111,7 @@ export function Sidebar() {
     const { t } = useLanguage();
     const role = detectRole(pathname);
     const config = getRoleSidebars(t)[role];
+    const supportHref = "/support";
 
     if (!config) return null;
 
@@ -142,8 +143,6 @@ export function Sidebar() {
                         )}
                         <div className="space-y-1">
                             {section.items.map((item) => {
-                                const isActive = pathname === item.href || 
-                                    (item.href !== "/portal" && item.href !== "/dashboard/adjuster" && item.href !== "/dashboard/underwriter" && pathname.startsWith(item.href));
                                 const isExactActive = pathname === item.href;
 
                                 return (
@@ -171,7 +170,7 @@ export function Sidebar() {
             <div className="mt-auto p-4">
                 {/* Support link */}
                 <Link
-                    href="#"
+                    href={supportHref}
                     className="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-all duration-200 text-sm font-medium"
                 >
                     <span className="material-symbols-outlined text-[20px]">help</span>
@@ -180,11 +179,12 @@ export function Sidebar() {
 
                 {/* CTA Button */}
                 {config.cta && (
-                    <Link href={config.cta.href} className="block mt-3">
-                        <button className="w-full py-4 primary-gradient text-white rounded-xl font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm">
-                            <span className="material-symbols-outlined text-sm">{config.cta.icon}</span>
-                            <span>{config.cta.label}</span>
-                        </button>
+                    <Link
+                        href={config.cta.href}
+                        className="w-full mt-3 py-4 primary-gradient text-white rounded-xl font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm block"
+                    >
+                        <span className="material-symbols-outlined text-sm">{config.cta.icon}</span>
+                        <span>{config.cta.label}</span>
                     </Link>
                 )}
             </div>
