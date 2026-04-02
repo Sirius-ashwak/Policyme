@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 const applicants = [
     {
@@ -57,7 +59,136 @@ const applicants = [
     },
 ];
 
+type QueueFilter = "all" | "high-risk" | "commercial";
+
+const FILTER_ORDER: QueueFilter[] = ["all", "high-risk", "commercial"];
+
+const FILTER_LABELS: Record<QueueFilter, string> = {
+    all: "All Applications",
+    "high-risk": "High Risk",
+    commercial: "Commercial",
+};
+
 export default function UnderwriterDashboard() {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
+    const [autoApprove, setAutoApprove] = useState(true);
+    const [approvalThreshold, setApprovalThreshold] = useState(85);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 3;
+
+    const filteredApplicants = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+
+        return applicants.filter((applicant) => {
+            const matchesSearch =
+                query.length === 0 ||
+                applicant.name.toLowerCase().includes(query) ||
+                applicant.email.toLowerCase().includes(query) ||
+                applicant.policyType.toLowerCase().includes(query);
+
+            const matchesFilter =
+                queueFilter === "all" ||
+                (queueFilter === "high-risk" && applicant.riskScore < 50) ||
+                (queueFilter === "commercial" && applicant.policyType.toLowerCase().includes("commercial"));
+
+            return matchesSearch && matchesFilter;
+        });
+    }, [queueFilter, searchQuery]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredApplicants.length / pageSize));
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+    const paginatedApplicants = useMemo(() => {
+        const start = (safeCurrentPage - 1) * pageSize;
+        return filteredApplicants.slice(start, start + pageSize);
+    }, [filteredApplicants, safeCurrentPage]);
+
+    const cycleFilter = () => {
+        const currentIndex = FILTER_ORDER.indexOf(queueFilter);
+        const nextFilter = FILTER_ORDER[(currentIndex + 1) % FILTER_ORDER.length];
+        setQueueFilter(nextFilter);
+        setCurrentPage(1);
+        toast.success(`Queue filter set to ${FILTER_LABELS[nextFilter]}.`);
+    };
+
+    const runAutoBatch = () => {
+        if (filteredApplicants.length === 0) {
+            toast.error("No applications match the current filter.");
+            return;
+        }
+
+        const processedCount = Math.min(10, filteredApplicants.length);
+        toast.promise(new Promise((resolve) => setTimeout(resolve, 1200)), {
+            loading: "Running automated underwriting batch...",
+            success: `Processed ${processedCount} applications using threshold > ${approvalThreshold}.`,
+            error: "Auto-batch failed",
+        });
+    };
+
+    const openBatchSettings = () => {
+        toast("Auto-batch settings", {
+            description: `Current rule: ${autoApprove ? "enabled" : "disabled"} with score > ${approvalThreshold}.`,
+        });
+    };
+
+    const exportQueue = () => {
+        if (filteredApplicants.length === 0) {
+            toast.error("Nothing to export for the current search/filter.");
+            return;
+        }
+
+        const header = "name,email,policyType,riskScore,status,dateSubmitted";
+        const rows = filteredApplicants
+            .map((applicant) => `${applicant.name},${applicant.email},${applicant.policyType},${applicant.riskScore},${applicant.status},${applicant.date}`)
+            .join("\n");
+        const csvContent = `${header}\n${rows}`;
+        const csvBlob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const downloadUrl = URL.createObjectURL(csvBlob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = `underwriter_queue_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
+
+        toast.success(`Exported ${filteredApplicants.length} applications.`);
+    };
+
+    const toggleAutoApprove = () => {
+        setAutoApprove((current) => {
+            const nextValue = !current;
+            toast(nextValue ? "Auto-approve enabled" : "Auto-approve disabled", {
+                description: `Current approval threshold is ${approvalThreshold}.`,
+            });
+            return nextValue;
+        });
+    };
+
+    const adjustGlobalThreshold = () => {
+        setApprovalThreshold((current) => {
+            const nextValue = current >= 95 ? 75 : current + 5;
+            toast.success(`Global threshold updated to ${nextValue}.`);
+            return nextValue;
+        });
+    };
+
+    const goToPreviousPage = () => {
+        if (safeCurrentPage <= 1) {
+            return;
+        }
+
+        setCurrentPage(safeCurrentPage - 1);
+    };
+
+    const goToNextPage = () => {
+        if (safeCurrentPage >= totalPages) {
+            return;
+        }
+
+        setCurrentPage(safeCurrentPage + 1);
+    };
+
     return (
         <div className="pt-16 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto animate-fade-in">
             {/* Header */}
@@ -99,10 +230,16 @@ export default function UnderwriterDashboard() {
                     </p>
                     <h4 className="text-lg font-bold mb-3">Priority Filter Active</h4>
                     <div className="flex gap-3">
-                        <button className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-semibold transition-colors">
+                        <button
+                            onClick={runAutoBatch}
+                            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-semibold transition-colors"
+                        >
                             Run Auto-Batch
                         </button>
-                        <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-semibold border border-white/20 transition-colors">
+                        <button
+                            onClick={openBatchSettings}
+                            className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-semibold border border-white/20 transition-colors"
+                        >
                             Settings
                         </button>
                     </div>
@@ -117,15 +254,26 @@ export default function UnderwriterDashboard() {
                     <input
                         type="text"
                         placeholder="Search profiles..."
+                        value={searchQuery}
+                        onChange={(event) => {
+                            setSearchQuery(event.target.value);
+                            setCurrentPage(1);
+                        }}
                         className="w-full pl-12 pr-4 py-3 bg-[var(--insurai-surface-container-lowest)] border border-[var(--insurai-outline-variant)]/15 rounded-xl text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all"
                     />
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] rounded-lg transition-colors">
+                    <button
+                        onClick={cycleFilter}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] rounded-lg transition-colors"
+                    >
                         <span className="material-symbols-outlined text-lg">tune</span>
                         Filter
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] rounded-lg transition-colors">
+                    <button
+                        onClick={exportQueue}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] rounded-lg transition-colors"
+                    >
                         <span className="material-symbols-outlined text-lg">download</span>
                         Export
                     </button>
@@ -158,7 +306,7 @@ export default function UnderwriterDashboard() {
                         </tr>
                     </thead>
                     <tbody>
-                        {applicants.map((app) => (
+                        {paginatedApplicants.map((app) => (
                             <tr key={app.email} className="hover:bg-[var(--insurai-surface-container-low)] transition-colors">
                                 <td className="px-6 py-5">
                                     <div className="flex items-center gap-3">
@@ -201,17 +349,34 @@ export default function UnderwriterDashboard() {
                                 </td>
                             </tr>
                         ))}
+                        {paginatedApplicants.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-8 text-center text-sm text-[var(--insurai-on-surface-variant)]">
+                                    No applications match your current search and filter.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
 
                 {/* Pagination */}
                 <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--insurai-surface-container-high)]">
-                    <span className="text-xs text-[var(--insurai-on-surface-variant)]">Showing 1 to 10 of 124 results</span>
+                    <span className="text-xs text-[var(--insurai-on-surface-variant)]">
+                        Showing {paginatedApplicants.length === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1} to {(safeCurrentPage - 1) * pageSize + paginatedApplicants.length} of {filteredApplicants.length} results ({FILTER_LABELS[queueFilter]})
+                    </span>
                     <div className="flex gap-2">
-                        <button className="w-8 h-8 rounded-lg border border-[var(--insurai-outline-variant)]/20 flex items-center justify-center text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] transition-colors">
+                        <button
+                            onClick={goToPreviousPage}
+                            disabled={safeCurrentPage <= 1}
+                            className="w-8 h-8 rounded-lg border border-[var(--insurai-outline-variant)]/20 flex items-center justify-center text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
                             <span className="material-symbols-outlined text-sm">chevron_left</span>
                         </button>
-                        <button className="w-8 h-8 rounded-lg border border-[var(--insurai-outline-variant)]/20 flex items-center justify-center text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] transition-colors">
+                        <button
+                            onClick={goToNextPage}
+                            disabled={safeCurrentPage >= totalPages}
+                            className="w-8 h-8 rounded-lg border border-[var(--insurai-outline-variant)]/20 flex items-center justify-center text-[var(--insurai-on-surface-variant)] hover:bg-[var(--insurai-surface-container-low)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
                             <span className="material-symbols-outlined text-sm">chevron_right</span>
                         </button>
                     </div>
@@ -249,16 +414,22 @@ export default function UnderwriterDashboard() {
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-[var(--insurai-on-surface-variant)]">Current threshold:</span>
                             <span className="text-sm font-bold">
-                                Score &gt; <span className="text-[var(--primary)]">85</span>
+                                Score &gt; <span className="text-[var(--primary)]">{approvalThreshold}</span>
                             </span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-[var(--insurai-on-surface-variant)]">Auto-approve active</span>
-                            <div className="w-11 h-6 bg-[var(--primary)] rounded-full relative cursor-pointer">
-                                <div className="absolute right-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md" />
+                            <div
+                                onClick={toggleAutoApprove}
+                                className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors ${autoApprove ? "bg-[var(--primary)]" : "bg-slate-300 dark:bg-slate-700"}`}
+                            >
+                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all ${autoApprove ? "right-0.5" : "left-0.5"}`} />
                             </div>
                         </div>
-                        <button className="w-full py-3 bg-[var(--insurai-surface-container-high)] text-[var(--insurai-on-surface)] font-bold rounded-xl hover:bg-[var(--insurai-surface-container-highest)] transition-colors mt-4">
+                        <button
+                            onClick={adjustGlobalThreshold}
+                            className="w-full py-3 bg-[var(--insurai-surface-container-high)] text-[var(--insurai-on-surface)] font-bold rounded-xl hover:bg-[var(--insurai-surface-container-highest)] transition-colors mt-4"
+                        >
                             Adjust Global Threshold
                         </button>
                     </div>
