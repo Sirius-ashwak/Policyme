@@ -1,6 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
 export default function InsightsPage() {
+    const router = useRouter();
+
+    const openWeeklyReport = () => {
+        toast("Opening weekly intelligence brief...");
+        router.push("/dashboard/adjuster/ask");
+    };
+
     return (
         <div className="pt-16 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto animate-fade-in">
             <section className="mb-10">
@@ -33,7 +43,10 @@ export default function InsightsPage() {
                     <p className="text-blue-100 text-sm leading-relaxed mb-6">
                         GraphRAG analysis detected a 23% increase in water damage claims in the Northeast region this quarter. Cross-referencing with weather data shows correlation with above-average rainfall patterns.
                     </p>
-                    <button className="px-6 py-3 bg-white text-[var(--primary)] rounded-lg font-bold text-sm hover:bg-opacity-90 transition-all">
+                    <button
+                        onClick={openWeeklyReport}
+                        className="px-6 py-3 bg-white text-[var(--primary)] rounded-lg font-bold text-sm hover:bg-opacity-90 transition-all"
+                    >
                         View Full Report
                     </button>
                 </div>

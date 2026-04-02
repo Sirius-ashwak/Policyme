@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 const claims = [
     {
@@ -41,7 +44,52 @@ const teamActivity = [
     { name: "Elena Rodriguez", action: "Flagged POL-1102", time: "1h ago", initials: "ER", color: "bg-purple-500" },
 ];
 
+type ClaimFilter = "all" | "urgent" | "assigned";
+
+const FILTER_SEQUENCE: ClaimFilter[] = ["all", "urgent", "assigned"];
+
+const FILTER_LABELS: Record<ClaimFilter, string> = {
+    all: "All Claims",
+    urgent: "Urgent",
+    assigned: "Assigned to Me",
+};
+
 export default function AdjusterDashboard() {
+    const router = useRouter();
+    const [activeFilter, setActiveFilter] = useState<ClaimFilter>("all");
+
+    const urgentCount = useMemo(() => claims.filter((claim) => claim.status === "Urgent").length, []);
+    const assignedCount = useMemo(() => claims.filter((claim) => claim.highlighted).length, []);
+
+    const visibleClaims = useMemo(() => {
+        if (activeFilter === "urgent") {
+            return claims.filter((claim) => claim.status === "Urgent");
+        }
+
+        if (activeFilter === "assigned") {
+            return claims.filter((claim) => claim.highlighted);
+        }
+
+        return claims;
+    }, [activeFilter]);
+
+    const cycleQueueFilter = () => {
+        const currentIndex = FILTER_SEQUENCE.indexOf(activeFilter);
+        const nextFilter = FILTER_SEQUENCE[(currentIndex + 1) % FILTER_SEQUENCE.length];
+        setActiveFilter(nextFilter);
+        toast.success(`Queue filter set to ${FILTER_LABELS[nextFilter]}.`);
+    };
+
+    const openNewAssessment = () => {
+        toast("Opening AI assessment workspace...");
+        router.push("/dashboard/adjuster/ask");
+    };
+
+    const reviewAiFlags = () => {
+        setActiveFilter("urgent");
+        toast.info("Showing AI-flagged urgent claims.");
+    };
+
     return (
         <div className="pt-16 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto animate-fade-in">
             {/* Header Section */}
@@ -56,10 +104,16 @@ export default function AdjusterDashboard() {
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button className="px-5 py-2.5 rounded-lg border border-[var(--insurai-outline-variant)]/20 text-[var(--insurai-on-surface-variant)] font-medium hover:bg-[var(--insurai-surface-container-low)] transition-all">
+                            <button
+                                onClick={cycleQueueFilter}
+                                className="px-5 py-2.5 rounded-lg border border-[var(--insurai-outline-variant)]/20 text-[var(--insurai-on-surface-variant)] font-medium hover:bg-[var(--insurai-surface-container-low)] transition-all"
+                            >
                                 Filter Queue
                             </button>
-                            <button className="px-5 py-2.5 rounded-lg primary-gradient text-white font-semibold shadow-lg hover:scale-[1.02] active:scale-95 transition-all">
+                            <button
+                                onClick={openNewAssessment}
+                                className="px-5 py-2.5 rounded-lg primary-gradient text-white font-semibold shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+                            >
                                 New Assessment
                             </button>
                         </div>
@@ -72,21 +126,44 @@ export default function AdjusterDashboard() {
                     <section className="space-y-6">
                         {/* Status Tabs */}
                         <div className="flex gap-8 border-b border-[var(--insurai-surface-container-high)] pb-4">
-                            <button className="text-sm font-bold text-[var(--primary)] relative">
+                            <button
+                                onClick={() => setActiveFilter("all")}
+                                className={`text-sm relative transition-colors ${
+                                    activeFilter === "all"
+                                        ? "font-bold text-[var(--primary)]"
+                                        : "font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)]"
+                                }`}
+                            >
                                 All Claims (24)
-                                <span className="absolute -bottom-4 left-0 w-full h-0.5 bg-[var(--primary)]" />
+                                {activeFilter === "all" && <span className="absolute -bottom-4 left-0 w-full h-0.5 bg-[var(--primary)]" />}
                             </button>
-                            <button className="text-sm font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">
-                                Urgent (4)
+                            <button
+                                onClick={() => setActiveFilter("urgent")}
+                                className={`text-sm relative transition-colors ${
+                                    activeFilter === "urgent"
+                                        ? "font-bold text-[var(--primary)]"
+                                        : "font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)]"
+                                }`}
+                            >
+                                Urgent ({urgentCount})
+                                {activeFilter === "urgent" && <span className="absolute -bottom-4 left-0 w-full h-0.5 bg-[var(--primary)]" />}
                             </button>
-                            <button className="text-sm font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">
-                                Assigned to Me
+                            <button
+                                onClick={() => setActiveFilter("assigned")}
+                                className={`text-sm relative transition-colors ${
+                                    activeFilter === "assigned"
+                                        ? "font-bold text-[var(--primary)]"
+                                        : "font-medium text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)]"
+                                }`}
+                            >
+                                Assigned to Me ({assignedCount})
+                                {activeFilter === "assigned" && <span className="absolute -bottom-4 left-0 w-full h-0.5 bg-[var(--primary)]" />}
                             </button>
                         </div>
 
                         {/* Claim Cards */}
                         <div className="space-y-4">
-                            {claims.map((claim) => (
+                            {visibleClaims.map((claim) => (
                                 <Link
                                     key={claim.id}
                                     href={`/dashboard/adjuster/claim/${claim.id}`}
@@ -131,6 +208,12 @@ export default function AdjusterDashboard() {
                                     </div>
                                 </Link>
                             ))}
+                            {visibleClaims.length === 0 && (
+                                <div className="bg-[var(--insurai-surface-container-lowest)] p-8 rounded-xl border border-[var(--insurai-outline-variant)]/20 text-center">
+                                    <p className="text-sm font-semibold text-[var(--insurai-on-surface)]">No claims match this filter.</p>
+                                    <p className="text-xs text-[var(--insurai-on-surface-variant)] mt-1">Try switching to a broader queue view.</p>
+                                </div>
+                            )}
                         </div>
                     </section>
 
@@ -144,7 +227,10 @@ export default function AdjusterDashboard() {
                                 <p className="text-blue-100 text-sm leading-relaxed mb-6 opacity-90">
                                     InsurAI has flagged 4 claims as potentially fraudulent based on GraphRAG metadata analysis. We recommend reviewing these first.
                                 </p>
-                                <button className="w-full py-3 bg-white text-[var(--primary)] rounded-lg font-bold text-sm shadow-sm hover:bg-opacity-90 transition-all">
+                                <button
+                                    onClick={reviewAiFlags}
+                                    className="w-full py-3 bg-white text-[var(--primary)] rounded-lg font-bold text-sm shadow-sm hover:bg-opacity-90 transition-all"
+                                >
                                     Review AI Flags
                                 </button>
                             </div>
