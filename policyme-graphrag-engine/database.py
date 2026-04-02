@@ -102,23 +102,51 @@ async def insert_document_and_chunks(document_id: str, filename: str, chunk_data
 
 async def search_neo4j_graph(query: str):
     """
-    Search for matching clauses in Neo4j.
-    If local mocks are enabled, uses mock data as a fallback.
+    Search for matching policy text in Neo4j.
+    Primary source is ingested Chunk nodes; Clause nodes are also supported.
     """
+    normalized_query = (query or "").strip()
+    if not normalized_query:
+        return {"clauses": []}
+
+    terms = [term for term in normalized_query.lower().split() if len(term) >= 3]
+    if not terms:
+        terms = [normalized_query.lower()]
+
     cypher_query = """
-    MATCH (clause:Clause)
-    WHERE clause.text IS NOT NULL
-      AND toLower(clause.text) CONTAINS toLower($query)
-    RETURN
-      coalesce(clause.id, clause.clauseId, clause.section, elementId(clause)) AS id,
-      clause.text AS text,
-      coalesce(clause.department, "Unknown") AS department
+    CALL {
+        MATCH (d:Document)-[:HAS_CHUNK]->(chunk:Chunk)
+        WHERE chunk.text IS NOT NULL
+          AND any(term IN $terms WHERE toLower(chunk.text) CONTAINS term)
+        RETURN
+          coalesce(chunk.id, elementId(chunk)) AS id,
+          chunk.text AS text,
+          coalesce(d.filename, "Ingested Policy") AS department,
+          reduce(score = 0, term IN $terms |
+            score + CASE WHEN toLower(chunk.text) CONTAINS term THEN 1 ELSE 0 END
+          ) AS score
+
+        UNION
+
+        MATCH (clause:Clause)
+        WHERE clause.text IS NOT NULL
+          AND any(term IN $terms WHERE toLower(clause.text) CONTAINS term)
+        RETURN
+          coalesce(clause.id, clause.clauseId, clause.section, elementId(clause)) AS id,
+          clause.text AS text,
+          coalesce(clause.department, "Policy Clause") AS department,
+          reduce(score = 0, term IN $terms |
+            score + CASE WHEN toLower(clause.text) CONTAINS term THEN 1 ELSE 0 END
+          ) AS score
+    }
+    RETURN id, text, department, score
+    ORDER BY score DESC, size(text) ASC
     LIMIT 10
     """
 
     try:
         with driver.session() as session:
-            result = session.run(cypher_query, query=query)
+            result = session.run(cypher_query, terms=terms)
             clauses = []
             for record in result:
                 clause_text = record.get("text")
@@ -139,7 +167,7 @@ async def search_neo4j_graph(query: str):
             return build_mock_clause_response(query)
 
         return {"clauses": []}
-            
+
     except Exception as e:
         print(f"Database error: {e}")
         if mock_mode_enabled():
