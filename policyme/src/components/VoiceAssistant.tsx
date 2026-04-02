@@ -1,18 +1,69 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const languages = [
-    { code: "en", name: "English", flag: "🇺🇸" },
-    { code: "es", name: "Español", flag: "🇪🇸" },
-    { code: "fr", name: "Français", flag: "🇫🇷" },
-    { code: "de", name: "Deutsch", flag: "🇩🇪" },
-    { code: "ar", name: "العربية", flag: "🇸🇦" },
-    { code: "hi", name: "हिन्दी", flag: "🇮🇳" },
-    { code: "zh", name: "中文", flag: "🇨🇳" },
-    { code: "ja", name: "日本語", flag: "🇯🇵" },
-    { code: "pt", name: "Português", flag: "🇧🇷" },
-    { code: "ko", name: "한국어", flag: "🇰🇷" },
+type LanguageOption = {
+    code: string;
+    locale: string;
+    name: string;
+    flag: string;
+};
+
+type SpeechRecognitionAlternativeLike = {
+    transcript: string;
+};
+
+type SpeechRecognitionResultLike = {
+    0: SpeechRecognitionAlternativeLike;
+    isFinal: boolean;
+    length: number;
+};
+
+type SpeechRecognitionResultListLike = {
+    [index: number]: SpeechRecognitionResultLike;
+    length: number;
+};
+
+type SpeechRecognitionEventLike = Event & {
+    results: SpeechRecognitionResultListLike;
+};
+
+type SpeechRecognitionErrorEventLike = Event & {
+    error?: string;
+};
+
+type BrowserSpeechRecognition = {
+    lang: string;
+    continuous: boolean;
+    interimResults: boolean;
+    onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+    onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+    onend: (() => void) | null;
+    start: () => void;
+    stop: () => void;
+    abort: () => void;
+};
+
+type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
+
+declare global {
+    interface Window {
+        SpeechRecognition?: BrowserSpeechRecognitionConstructor;
+        webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
+    }
+}
+
+const languages: LanguageOption[] = [
+    { code: "en", locale: "en-US", name: "English", flag: "🇺🇸" },
+    { code: "es", locale: "es-ES", name: "Español", flag: "🇪🇸" },
+    { code: "fr", locale: "fr-FR", name: "Français", flag: "🇫🇷" },
+    { code: "de", locale: "de-DE", name: "Deutsch", flag: "🇩🇪" },
+    { code: "ar", locale: "ar-SA", name: "العربية", flag: "🇸🇦" },
+    { code: "hi", locale: "hi-IN", name: "हिन्दी", flag: "🇮🇳" },
+    { code: "zh", locale: "zh-CN", name: "中文", flag: "🇨🇳" },
+    { code: "ja", locale: "ja-JP", name: "日本語", flag: "🇯🇵" },
+    { code: "pt", locale: "pt-BR", name: "Português", flag: "🇧🇷" },
+    { code: "ko", locale: "ko-KR", name: "한국어", flag: "🇰🇷" },
 ];
 
 const suggestedQueries = [
@@ -24,6 +75,28 @@ const suggestedQueries = [
     "Am I covered for flood damage?",
 ];
 
+function getRecognitionConstructor(): BrowserSpeechRecognitionConstructor | null {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function messageForRecognitionError(errorCode?: string): string {
+    if (errorCode === "not-allowed" || errorCode === "service-not-allowed") {
+        return "Microphone access was blocked. Allow microphone permissions and try again.";
+    }
+    if (errorCode === "audio-capture") {
+        return "No microphone input was detected.";
+    }
+    if (errorCode === "no-speech") {
+        return "No speech was captured. Try again and speak after the chime.";
+    }
+
+    return "Voice recognition stopped unexpectedly.";
+}
+
 export function VoiceAssistant() {
     const [isOpen, setIsOpen] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -34,13 +107,30 @@ export function VoiceAssistant() {
     const [showTranscript, setShowTranscript] = useState(false);
     const [isThinking, setIsThinking] = useState(false);
     const [voiceError, setVoiceError] = useState("");
+    const [voiceSupported, setVoiceSupported] = useState(true);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number>(0);
     const orbPhaseRef = useRef(0);
+    const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+    const transcriptRef = useRef("");
+    const submitOnRecognitionEndRef = useRef(false);
+
+    const speakResponse = (text: string) => {
+        if (typeof window === "undefined" || !("speechSynthesis" in window) || !text.trim()) {
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = currentLang.locale;
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+    };
 
     const askPolicyAI = async (query: string) => {
         setIsThinking(true);
         setVoiceError("");
+        setShowTranscript(true);
 
         try {
             const res = await fetch("/api/query", {
@@ -49,9 +139,7 @@ export function VoiceAssistant() {
                 body: JSON.stringify({
                     query,
                     userId: `voice_${currentLang.code}`,
-                    chat_history: [
-                        { role: "user", content: query },
-                    ],
+                    chat_history: [{ role: "user", content: query }],
                 }),
             });
 
@@ -60,7 +148,9 @@ export function VoiceAssistant() {
                 throw new Error(payload.error || "The AI service is unavailable.");
             }
 
-            setResponse(payload.answer || "I could not find enough policy context to answer that confidently.");
+            const answer = payload.answer || "I could not find enough policy context to answer that confidently.";
+            setResponse(answer);
+            speakResponse(answer);
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "Unable to process your question right now.";
             setResponse("I could not complete that request right now. Please try again.");
@@ -70,12 +160,139 @@ export function VoiceAssistant() {
         }
     };
 
-    // Orb animation (inspired by ChatGPT/Gemini voice orb)
+    const stopRecognition = (submitTranscript: boolean) => {
+        submitOnRecognitionEndRef.current = submitTranscript;
+
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+            return;
+        }
+
+        setIsListening(false);
+        if (submitTranscript && transcriptRef.current.trim()) {
+            void askPolicyAI(transcriptRef.current.trim());
+        }
+    };
+
+    const resetAssistant = () => {
+        submitOnRecognitionEndRef.current = false;
+        recognitionRef.current?.abort();
+        recognitionRef.current = null;
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+            window.speechSynthesis.cancel();
+        }
+        setIsOpen(false);
+        setIsListening(false);
+        setShowLangPicker(false);
+        setShowTranscript(false);
+        setIsThinking(false);
+        setVoiceError("");
+        setTranscript("");
+        transcriptRef.current = "";
+        setResponse("");
+    };
+
+    const startListening = () => {
+        const RecognitionConstructor = getRecognitionConstructor();
+        if (!RecognitionConstructor) {
+            setVoiceSupported(false);
+            setShowTranscript(true);
+            setVoiceError("Voice recognition is not supported in this browser.");
+            setResponse("");
+            return;
+        }
+
+        try {
+            const recognition = new RecognitionConstructor();
+            recognition.lang = currentLang.locale;
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (event) => {
+                let nextTranscript = "";
+
+                for (let index = 0; index < event.results.length; index += 1) {
+                    const result = event.results[index];
+                    const chunk = result[0]?.transcript || "";
+                    nextTranscript += chunk;
+                }
+
+                const cleanedTranscript = nextTranscript.trim();
+                transcriptRef.current = cleanedTranscript;
+                setTranscript(cleanedTranscript);
+                if (cleanedTranscript) {
+                    setShowTranscript(true);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                submitOnRecognitionEndRef.current = false;
+                setVoiceError(messageForRecognitionError(event.error));
+                setShowTranscript(true);
+                setIsListening(false);
+            };
+
+            recognition.onend = () => {
+                recognitionRef.current = null;
+                setIsListening(false);
+
+                const finalTranscript = transcriptRef.current.trim();
+                if (submitOnRecognitionEndRef.current && finalTranscript) {
+                    void askPolicyAI(finalTranscript);
+                } else if (submitOnRecognitionEndRef.current && !finalTranscript) {
+                    setShowTranscript(true);
+                    setVoiceError("No speech was captured. Try again.");
+                }
+
+                submitOnRecognitionEndRef.current = false;
+            };
+
+            recognitionRef.current = recognition;
+            transcriptRef.current = "";
+            setTranscript("");
+            setResponse("");
+            setVoiceError("");
+            setShowTranscript(false);
+            setIsListening(true);
+            setVoiceSupported(true);
+            submitOnRecognitionEndRef.current = true;
+            recognition.start();
+        } catch (error: unknown) {
+            setVoiceError(error instanceof Error ? error.message : "Unable to start voice recognition.");
+            setShowTranscript(true);
+            setIsListening(false);
+        }
+    };
+
     useEffect(() => {
-        if (!isOpen || !canvasRef.current) return;
+        setVoiceSupported(Boolean(getRecognitionConstructor()));
+    }, []);
+
+    useEffect(() => {
+        transcriptRef.current = transcript;
+    }, [transcript]);
+
+    useEffect(() => {
+        return () => {
+            submitOnRecognitionEndRef.current = false;
+            recognitionRef.current?.abort();
+            if (typeof window !== "undefined" && "speechSynthesis" in window) {
+                window.speechSynthesis.cancel();
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isOpen || !canvasRef.current) {
+            return;
+        }
 
         const canvas = canvasRef.current;
-        const ctx = canvas.getContext("2d")!;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            return;
+        }
+
         const dpr = window.devicePixelRatio || 1;
         canvas.width = 320 * dpr;
         canvas.height = 320 * dpr;
@@ -90,7 +307,6 @@ export function VoiceAssistant() {
             const baseRadius = isListening ? 90 : 70;
             const intensity = isListening ? 1.0 : 0.4;
 
-            // Outer glow
             const glowGrad = ctx.createRadialGradient(cx, cy, baseRadius * 0.5, cx, cy, baseRadius * 2);
             glowGrad.addColorStop(0, `rgba(21, 106, 255, ${0.15 * intensity})`);
             glowGrad.addColorStop(0.5, `rgba(21, 106, 255, ${0.05 * intensity})`);
@@ -98,23 +314,25 @@ export function VoiceAssistant() {
             ctx.fillStyle = glowGrad;
             ctx.fillRect(0, 0, 320, 320);
 
-            // Draw layered organic blobs
-            for (let layer = 3; layer >= 0; layer--) {
+            for (let layer = 3; layer >= 0; layer -= 1) {
                 const layerRadius = baseRadius - layer * (isListening ? 8 : 6);
                 const alpha = 0.15 + layer * 0.2;
                 const speed = 1 + layer * 0.3;
                 const wobble = isListening ? 12 + layer * 4 : 4 + layer * 2;
 
                 ctx.beginPath();
-                for (let a = 0; a < Math.PI * 2; a += 0.02) {
-                    const n1 = Math.sin(a * 3 + phase * speed) * wobble;
-                    const n2 = Math.cos(a * 5 - phase * speed * 0.7) * wobble * 0.6;
-                    const n3 = Math.sin(a * 7 + phase * speed * 1.3) * wobble * 0.3;
-                    const r = layerRadius + n1 + n2 + n3;
-                    const x = cx + Math.cos(a) * r;
-                    const y = cy + Math.sin(a) * r;
-                    if (a === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
+                for (let angle = 0; angle < Math.PI * 2; angle += 0.02) {
+                    const n1 = Math.sin(angle * 3 + phase * speed) * wobble;
+                    const n2 = Math.cos(angle * 5 - phase * speed * 0.7) * wobble * 0.6;
+                    const n3 = Math.sin(angle * 7 + phase * speed * 1.3) * wobble * 0.3;
+                    const radius = layerRadius + n1 + n2 + n3;
+                    const x = cx + Math.cos(angle) * radius;
+                    const y = cy + Math.sin(angle) * radius;
+                    if (angle === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
                 }
                 ctx.closePath();
 
@@ -137,7 +355,6 @@ export function VoiceAssistant() {
                 ctx.fill();
             }
 
-            // Inner bright core
             const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseRadius * 0.5);
             coreGrad.addColorStop(0, `rgba(255, 255, 255, ${isListening ? 0.5 : 0.3})`);
             coreGrad.addColorStop(0.5, `rgba(150, 200, 255, ${isListening ? 0.2 : 0.1})`);
@@ -156,22 +373,19 @@ export function VoiceAssistant() {
 
     const toggleListening = () => {
         if (isListening) {
-            setIsListening(false);
-            const fallbackTranscript = transcript || "What's covered under my auto policy deductible?";
-            setTranscript(fallbackTranscript);
-            setShowTranscript(true);
-            void askPolicyAI(fallbackTranscript);
-        } else {
-            setIsListening(true);
-            setTranscript("");
-            setResponse("");
-            setVoiceError("");
-            setShowTranscript(false);
+            stopRecognition(true);
+            return;
         }
+
+        startListening();
     };
 
     const handleQueryClick = (query: string) => {
+        submitOnRecognitionEndRef.current = false;
+        recognitionRef.current?.abort();
+        recognitionRef.current = null;
         setTranscript(query);
+        transcriptRef.current = query;
         setShowTranscript(true);
         setIsListening(false);
         setResponse("");
@@ -180,7 +394,6 @@ export function VoiceAssistant() {
 
     return (
         <>
-            {/* ===== FLOATING ACTION BUTTON ===== */}
             <button
                 onClick={() => setIsOpen(true)}
                 className={`fixed bottom-8 right-8 z-[60] w-16 h-16 rounded-full primary-gradient text-white shadow-2xl shadow-blue-500/30 flex items-center justify-center transition-all duration-500 hover:scale-110 hover:shadow-blue-500/50 active:scale-95 group ${
@@ -188,44 +401,36 @@ export function VoiceAssistant() {
                 }`}
                 aria-label="Open AI Voice Assistant"
             >
-                {/* Pulse ring */}
                 <span className="absolute inset-0 rounded-full bg-[var(--primary)] animate-ping opacity-20" />
                 <span className="material-symbols-outlined text-2xl relative z-10">mic</span>
             </button>
 
-            {/* ===== FULLSCREEN VOICE OVERLAY ===== */}
             <div
                 className={`fixed inset-0 z-[100] transition-all duration-500 ${
-                    isOpen
-                        ? "opacity-100 pointer-events-auto"
-                        : "opacity-0 pointer-events-none"
+                    isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 }`}
             >
-                {/* Background */}
                 <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1e] via-[#0d1528] to-[#060a14]" />
 
-                {/* Ambient particles */}
                 <div className="absolute inset-0 overflow-hidden">
-                    {[...Array(6)].map((_, i) => (
+                    {[...Array(6)].map((_, index) => (
                         <div
-                            key={i}
+                            key={index}
                             className="absolute rounded-full blur-3xl opacity-10"
                             style={{
-                                width: `${150 + i * 80}px`,
-                                height: `${150 + i * 80}px`,
-                                background: `radial-gradient(circle, rgba(21, 106, 255, 0.4), transparent)`,
-                                left: `${10 + i * 15}%`,
-                                top: `${20 + (i % 3) * 25}%`,
-                                animation: `float-particle ${6 + i * 2}s ease-in-out infinite alternate`,
-                                animationDelay: `${i * 0.5}s`,
+                                width: `${150 + index * 80}px`,
+                                height: `${150 + index * 80}px`,
+                                background: "radial-gradient(circle, rgba(21, 106, 255, 0.4), transparent)",
+                                left: `${10 + index * 15}%`,
+                                top: `${20 + (index % 3) * 25}%`,
+                                animation: `float-particle ${6 + index * 2}s ease-in-out infinite alternate`,
+                                animationDelay: `${index * 0.5}s`,
                             }}
                         />
                     ))}
                 </div>
 
-                {/* Content */}
                 <div className="relative z-10 flex flex-col h-full">
-                    {/* Top Bar */}
                     <header className="flex items-center justify-between px-8 py-6">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 primary-gradient rounded-lg flex items-center justify-center">
@@ -234,16 +439,15 @@ export function VoiceAssistant() {
                             <div>
                                 <h2 className="text-white font-bold text-sm">InsurAI Voice</h2>
                                 <p className="text-blue-400 text-[10px] font-bold uppercase tracking-widest font-[Inter]">
-                                    {isListening ? "Listening..." : "Ready"}
+                                    {isThinking ? "Thinking..." : isListening ? "Listening..." : "Ready"}
                                 </p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3">
-                            {/* Language Selector */}
                             <div className="relative">
                                 <button
-                                    onClick={() => setShowLangPicker(!showLangPicker)}
+                                    onClick={() => setShowLangPicker((current) => !current)}
                                     className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-sm transition-all"
                                 >
                                     <span className="text-lg">{currentLang.flag}</span>
@@ -277,18 +481,8 @@ export function VoiceAssistant() {
                                 )}
                             </div>
 
-                            {/* Close */}
                             <button
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    setIsListening(false);
-                                    setShowLangPicker(false);
-                                    setShowTranscript(false);
-                                    setIsThinking(false);
-                                    setVoiceError("");
-                                    setTranscript("");
-                                    setResponse("");
-                                }}
+                                onClick={resetAssistant}
                                 className="w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center justify-center text-white transition-all"
                             >
                                 <span className="material-symbols-outlined">close</span>
@@ -296,60 +490,42 @@ export function VoiceAssistant() {
                         </div>
                     </header>
 
-                    {/* Center: Orb + State */}
                     <div className="flex-1 flex flex-col items-center justify-center px-8">
-                        {/* Orb Canvas */}
-                        <div
-                            className={`relative transition-all duration-700 ${
-                                showTranscript ? "scale-75 -translate-y-8" : "scale-100"
-                            }`}
-                        >
-                            <canvas
-                                ref={canvasRef}
-                                className="w-[320px] h-[320px]"
-                                style={{ width: 320, height: 320 }}
-                            />
+                        <div className={`relative transition-all duration-700 ${showTranscript ? "scale-75 -translate-y-8" : "scale-100"}`}>
+                            <canvas ref={canvasRef} className="w-[320px] h-[320px]" style={{ width: 320, height: 320 }} />
 
-                            {/* Center mic icon */}
-                            <button
-                                onClick={toggleListening}
-                                className="absolute inset-0 flex items-center justify-center"
-                            >
+                            <button onClick={toggleListening} className="absolute inset-0 flex items-center justify-center">
                                 <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
-                                    isListening
-                                        ? "bg-white/20 backdrop-blur-sm scale-110"
-                                        : "bg-white/10 hover:bg-white/15"
+                                    isListening ? "bg-white/20 backdrop-blur-sm scale-110" : "bg-white/10 hover:bg-white/15"
                                 }`}>
-                                    <span className={`material-symbols-outlined text-white text-3xl transition-all ${
-                                        isListening ? "text-4xl" : ""
-                                    }`}>
+                                    <span className={`material-symbols-outlined text-white text-3xl transition-all ${isListening ? "text-4xl" : ""}`}>
                                         {isListening ? "graphic_eq" : "mic"}
                                     </span>
                                 </div>
                             </button>
                         </div>
 
-                        {/* Status text */}
                         <p className={`text-white/50 text-sm font-medium mt-2 transition-all duration-500 ${
                             showTranscript ? "opacity-0 -translate-y-4" : "opacity-100"
                         }`}>
                             {isThinking
                                 ? "Analyzing policy graph..."
                                 : isListening
-                                ? "I'm listening... speak now"
-                                : "Tap the orb to start speaking"}
+                                    ? "I'm listening... speak now"
+                                    : voiceSupported
+                                        ? "Tap the orb to start speaking"
+                                        : "Use typed prompts or a supported browser for voice capture"}
                         </p>
 
-                        {/* Transcript & Response */}
                         {showTranscript && (
                             <div className="w-full max-w-lg mt-4 animate-fade-in space-y-4">
-                                {/* User message */}
-                                <div className="flex justify-end">
-                                    <div className="bg-blue-600/20 border border-blue-500/20 rounded-2xl rounded-br-md px-5 py-3 max-w-[85%]">
-                                        <p className="text-white text-sm">{transcript}</p>
+                                {transcript && (
+                                    <div className="flex justify-end">
+                                        <div className="bg-blue-600/20 border border-blue-500/20 rounded-2xl rounded-br-md px-5 py-3 max-w-[85%]">
+                                            <p className="text-white text-sm">{transcript}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                {/* AI Response */}
+                                )}
                                 <div className="flex justify-start">
                                     <div className="bg-white/5 border border-white/10 rounded-2xl rounded-bl-md px-5 py-3 max-w-[85%]">
                                         <div className="flex items-center gap-2 mb-2">
@@ -358,8 +534,12 @@ export function VoiceAssistant() {
                                             </div>
                                             <span className="text-blue-400 text-[10px] font-bold uppercase tracking-widest font-[Inter]">InsurAI</span>
                                         </div>
-                                        <p className="text-white/80 text-sm leading-relaxed">{isThinking ? "Analyzing your request..." : response}</p>
-                                        {voiceError && (
+                                        <p className="text-white/80 text-sm leading-relaxed">
+                                            {isThinking
+                                                ? "Analyzing your request..."
+                                                : response || voiceError || "Speak a question or try one of the suggested prompts."}
+                                        </p>
+                                        {voiceError && response && (
                                             <p className="text-red-300 text-xs mt-2">{voiceError}</p>
                                         )}
                                     </div>
@@ -368,7 +548,6 @@ export function VoiceAssistant() {
                         )}
                     </div>
 
-                    {/* Bottom: Suggestions + Controls */}
                     <footer className="px-8 pb-8">
                         {!showTranscript && !isListening && (
                             <div className="max-w-2xl mx-auto mb-6">
@@ -376,20 +555,19 @@ export function VoiceAssistant() {
                                     Try asking
                                 </p>
                                 <div className="flex flex-wrap gap-2 justify-center">
-                                    {suggestedQueries.map((q) => (
+                                    {suggestedQueries.map((query) => (
                                         <button
-                                            key={q}
-                                            onClick={() => handleQueryClick(q)}
+                                            key={query}
+                                            onClick={() => handleQueryClick(query)}
                                             className="px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/30 rounded-xl text-white/70 hover:text-white text-sm transition-all"
                                         >
-                                            {q}
+                                            {query}
                                         </button>
                                     ))}
                                 </div>
                             </div>
                         )}
 
-                        {/* Bottom controls */}
                         <div className="flex items-center justify-center gap-4">
                             <button
                                 onClick={toggleListening}
@@ -399,9 +577,7 @@ export function VoiceAssistant() {
                                         : "bg-white/10 hover:bg-white/15 text-white border border-white/10"
                                 }`}
                             >
-                                <span className="material-symbols-outlined text-xl">
-                                    {isListening ? "stop" : "mic"}
-                                </span>
+                                <span className="material-symbols-outlined text-xl">{isListening ? "stop" : "mic"}</span>
                             </button>
 
                             <button
