@@ -3,9 +3,28 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import AIChatbot from "@/components/AIChatbot";
+
+type ClaimExtraction = {
+    claimType?: string;
+    claim_type?: string;
+    description?: string;
+    amount?: string;
+    estimated_amount?: string;
+    date?: string;
+    incident_date?: string;
+    location?: string;
+};
 
 export default function SubmitClaimPage() {
     const [currentStep, setCurrentStep] = useState(0);
+    const [claimType, setClaimType] = useState("");
+    const [incidentDate, setIncidentDate] = useState("");
+    const [incidentTime, setIncidentTime] = useState("");
+    const [description, setDescription] = useState("");
+    const [location, setLocation] = useState("");
+    const [estimatedAmount, setEstimatedAmount] = useState("");
+    const [submitMessage, setSubmitMessage] = useState<string | null>(null);
     const { t } = useLanguage();
 
     const steps = [
@@ -13,6 +32,38 @@ export default function SubmitClaimPage() {
         { label: t("submit.step_evidence"), key: "evidence" },
         { label: t("submit.step_review"), key: "review" },
     ];
+
+    const handleClaimExtracted = (data: ClaimExtraction) => {
+        const extractedType = data.claimType || data.claim_type;
+        const extractedDate = data.date || data.incident_date;
+        const extractedAmount = data.amount || data.estimated_amount;
+
+        if (extractedType) setClaimType(extractedType);
+        if (extractedDate) setIncidentDate(extractedDate);
+        if (data.description) setDescription(data.description);
+        if (data.location) setLocation(data.location);
+        if (extractedAmount) setEstimatedAmount(extractedAmount);
+    };
+
+    const handleBackAction = () => {
+        if (currentStep === 0) {
+            window.location.assign("/portal");
+            return;
+        }
+
+        setSubmitMessage(null);
+        setCurrentStep((prev) => Math.max(0, prev - 1));
+    };
+
+    const handlePrimaryAction = () => {
+        if (currentStep === steps.length - 1) {
+            setSubmitMessage("Claim submitted successfully. You can track progress in Claims History.");
+            return;
+        }
+
+        setSubmitMessage(null);
+        setCurrentStep((prev) => Math.min(steps.length - 1, prev + 1));
+    };
 
     return (
         <div className="min-h-screen bg-[var(--insurai-surface)]">
@@ -29,9 +80,9 @@ export default function SubmitClaimPage() {
                         <span className="text-xl font-bold tracking-tighter text-[var(--insurai-on-surface)]">InsurAI</span>
                     </div>
                     <div className="w-24 flex justify-end">
-                        <button className="text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">
+                        <Link href="/support" className="text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors">
                             <span className="material-symbols-outlined">help_outline</span>
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </header>
@@ -82,19 +133,31 @@ export default function SubmitClaimPage() {
                                     <h2 className="text-lg font-bold">{t("submit.incident_details")}</h2>
                                     <p className="text-[var(--insurai-on-surface-variant)] text-sm">{t("submit.incident_subtitle")}</p>
                                 </div>
+
+                                <div className="space-y-3">
+                                    <p className="text-xs font-bold uppercase tracking-widest text-[var(--primary)] font-['Inter']">AI Claim Assistant</p>
+                                    <AIChatbot onClaimExtracted={handleClaimExtracted} />
+                                    <p className="text-xs text-[var(--insurai-on-surface-variant)]">
+                                        Ask the assistant what happened, when it occurred, and estimated damage. It will auto-fill your claim details below.
+                                    </p>
+                                </div>
+
                                 <div className="grid grid-cols-1 gap-6">
                                     
                                     {/* Incident Type */}
                                     <div className="space-y-2">
                                         <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">{t("submit.claim_type")}</label>
                                         <div className="relative">
-                                            <select className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 appearance-none font-medium text-[var(--insurai-on-surface)] cursor-pointer focus:ring-4 focus:ring-[var(--primary)]/10">
+                                            <select
+                                                value={claimType}
+                                                onChange={(e) => setClaimType(e.target.value)}
+                                                className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 appearance-none font-medium text-[var(--insurai-on-surface)] cursor-pointer focus:ring-4 focus:ring-[var(--primary)]/10"
+                                            >
                                                 <option>Select incident type</option>
-                                                <option>Vehicle Collision</option>
-                                                <option>Property Damage</option>
-                                                <option>Theft / Burglary</option>
-                                                <option>Natural Disaster</option>
-                                                <option>Medical Emergency</option>
+                                                <option>auto-collision</option>
+                                                <option>auto-comprehensive</option>
+                                                <option>property</option>
+                                                <option>health</option>
                                             </select>
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--insurai-on-surface-variant)]">
                                                 <span className="material-symbols-outlined">unfold_more</span>
@@ -107,14 +170,47 @@ export default function SubmitClaimPage() {
                                         <div className="space-y-2">
                                             <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">{t("submit.date_of_incident")}</label>
                                             <div className="relative">
-                                                <input type="date" className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] focus:ring-4 focus:ring-[var(--primary)]/10" />
+                                                <input
+                                                    type="date"
+                                                    value={incidentDate}
+                                                    onChange={(e) => setIncidentDate(e.target.value)}
+                                                    className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] focus:ring-4 focus:ring-[var(--primary)]/10"
+                                                />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">{t("submit.approx_time")}</label>
                                             <div className="relative">
-                                                <input type="time" className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] focus:ring-4 focus:ring-[var(--primary)]/10" />
+                                                <input
+                                                    type="time"
+                                                    value={incidentTime}
+                                                    onChange={(e) => setIncidentTime(e.target.value)}
+                                                    className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] focus:ring-4 focus:ring-[var(--primary)]/10"
+                                                />
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">Location</label>
+                                            <input
+                                                type="text"
+                                                value={location}
+                                                onChange={(e) => setLocation(e.target.value)}
+                                                placeholder="City, province, or incident address"
+                                                className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] focus:ring-4 focus:ring-[var(--primary)]/10"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">Estimated Damage Amount</label>
+                                            <input
+                                                type="text"
+                                                value={estimatedAmount}
+                                                onChange={(e) => setEstimatedAmount(e.target.value)}
+                                                placeholder="e.g. 2400"
+                                                className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] focus:ring-4 focus:ring-[var(--primary)]/10"
+                                            />
                                         </div>
                                     </div>
                                     
@@ -122,6 +218,8 @@ export default function SubmitClaimPage() {
                                     <div className="space-y-2">
                                         <label className="font-['Inter'] text-xs font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-wider ml-1 block">{t("submit.description")}</label>
                                         <textarea 
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
                                             className="w-full bg-[var(--insurai-surface-container-highest)]/40 border-none rounded-xl py-4 px-4 font-medium text-[var(--insurai-on-surface)] resize-none placeholder:text-[var(--insurai-on-surface-variant)]/50 focus:ring-4 focus:ring-[var(--primary)]/10" 
                                             placeholder="Provide a detailed account of the events leading up to the incident..." 
                                             rows={5} 
@@ -191,7 +289,15 @@ export default function SubmitClaimPage() {
                                      <h3 className="font-bold border-b border-[var(--insurai-surface-container-high)] pb-4 mb-4">Summary</h3>
                                      <div className="flex justify-between text-sm py-2">
                                          <span className="text-[var(--insurai-on-surface-variant)]">Claim Type</span>
-                                         <span className="font-semibold">Vehicle Collision</span>
+                                         <span className="font-semibold">{claimType || "Not provided yet"}</span>
+                                     </div>
+                                     <div className="flex justify-between text-sm py-2">
+                                         <span className="text-[var(--insurai-on-surface-variant)]">Incident Date</span>
+                                         <span className="font-semibold">{incidentDate || "Not provided yet"}</span>
+                                     </div>
+                                     <div className="flex justify-between text-sm py-2">
+                                         <span className="text-[var(--insurai-on-surface-variant)]">Estimated Amount</span>
+                                         <span className="font-semibold">{estimatedAmount || "Not provided yet"}</span>
                                      </div>
                                 </div>
                              </div>
@@ -200,18 +306,22 @@ export default function SubmitClaimPage() {
                         {/* Footer Actions */}
                         <div className="pt-10 flex items-center justify-between">
                             <button 
-                                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                                onClick={handleBackAction}
                                 className="px-6 py-4 font-['Inter'] text-sm font-bold text-[var(--insurai-on-surface-variant)] hover:text-[var(--insurai-on-surface)] transition-colors flex items-center gap-2"
                             >
                                 {currentStep === 0 ? t("submit.save_for_later") : t("submit.back")}
                             </button>
                             <button 
-                                onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                                onClick={handlePrimaryAction}
                                 className="bg-gradient-to-br from-[var(--primary)] to-[var(--insurai-primary-container)] px-10 py-4 rounded-xl text-sm font-bold text-white shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-95 transition-all"
                             >
                                 {currentStep === steps.length - 1 ? t("submit.submit_claim") : t("submit.continue")}
                             </button>
                         </div>
+
+                        {submitMessage && (
+                            <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-4">{submitMessage}</p>
+                        )}
                         
                         {/* Security/Trust Badge */}
                         <div className="flex items-center justify-center gap-2 pt-8 opacity-40">

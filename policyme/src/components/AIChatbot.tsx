@@ -34,10 +34,17 @@ export default function AIChatbot({ onClaimExtracted }: AIChatbotProps) {
     ]);
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
-    const [userMessageCount, setUserMessageCount] = useState(0);
     const [extractedData, setExtractedData] = useState<ExtractedData>({});
     const [isComplete, setIsComplete] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const hasRequiredClaimFields = (data: Record<string, unknown>) => {
+        const claimType = typeof data.claimType === "string" ? data.claimType : data.claim_type;
+        const date = typeof data.date === "string" ? data.date : data.incident_date;
+        const amount = typeof data.amount === "string" ? data.amount : data.estimated_amount;
+
+        return Boolean(claimType && date && amount);
+    };
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -64,6 +71,7 @@ export default function AIChatbot({ onClaimExtracted }: AIChatbotProps) {
             
             const reqBody = {
                 query: userText,
+                userId: "portal_customer",
                 chat_history: chatHistory,
                 extracted_data: extractedData
             };
@@ -74,7 +82,11 @@ export default function AIChatbot({ onClaimExtracted }: AIChatbotProps) {
                 body: JSON.stringify(reqBody)
             });
             
-            if (!res.ok) throw new Error("Failed to fetch from LLM");
+            if (!res.ok) {
+                const errorBody = await res.json().catch(() => null);
+                const message = errorBody?.error || "Failed to fetch from LLM";
+                throw new Error(message);
+            }
             
             const data = await res.json();
             
@@ -92,7 +104,7 @@ export default function AIChatbot({ onClaimExtracted }: AIChatbotProps) {
                 setExtractedData(updatedExtracted);
                 
                 // If we have all required fields, mark complete
-                if (updatedExtracted.claimType && updatedExtracted.date && updatedExtracted.amount) {
+                if (hasRequiredClaimFields(updatedExtracted as Record<string, unknown>)) {
                     setIsComplete(true);
                     onClaimExtracted(updatedExtracted);
                 }
