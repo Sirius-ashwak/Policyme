@@ -17,14 +17,28 @@ const suggestedActions = [
     { title: "Complete Q1 Security Training", date: "Due in 5 days" },
 ];
 
+type Citation = {
+    id: string;
+    text: string;
+};
+
+type QueryResult = {
+    answer: string;
+    citations: Citation[];
+    confidence: number;
+};
+
 export default function AdjusterDashboard() {
     const [query, setQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
-    const [result, setResult] = useState<any>(null);
+    const [result, setResult] = useState<QueryResult | null>(null);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!query) return;
+        const trimmedQuery = query.trim();
+        if (!trimmedQuery) return;
+
+        setQuery(trimmedQuery);
         setIsSearching(true);
         setResult(null);
 
@@ -32,15 +46,19 @@ export default function AdjusterDashboard() {
             const res = await fetch("/api/query", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query })
+                body: JSON.stringify({ query: trimmedQuery })
             });
             const data = await res.json();
             if (res.ok) {
-                setResult(data);
+                setResult({
+                    answer: typeof data.answer === "string" ? data.answer : "No answer returned.",
+                    citations: Array.isArray(data.citations) ? data.citations : [],
+                    confidence: typeof data.confidence === "number" ? data.confidence : 0,
+                });
             } else {
                 setResult({ answer: `Error: ${data.error}`, citations: [], confidence: 0 });
             }
-        } catch (error) {
+        } catch {
             setResult({ answer: "Failed to connect to AI engine.", citations: [], confidence: 0 });
         } finally {
             setIsSearching(false);
@@ -66,7 +84,7 @@ export default function AdjusterDashboard() {
                     />
                     <Button
                         type="submit"
-                        disabled={!query}
+                        disabled={!query.trim() || isSearching}
                         className="absolute right-2 h-12 rounded-full px-6 bg-primary hover:bg-primary/90 transition-all font-medium"
                     >
                         {isSearching ? <Sparkles className="h-4 w-4 animate-spin" /> : "Search"}
@@ -99,7 +117,7 @@ export default function AdjusterDashboard() {
                             <div className="pt-4 border-t border-border/50">
                                 <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wider">Citations (Micro-Graph View)</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {result.citations.map((cite: any, i: number) => (
+                                    {result.citations.map((cite, i) => (
                                         <div key={i} className="inline-flex flex-col rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm hover:bg-primary/10 transition-colors cursor-pointer text-primary">
                                             <span className="font-bold">[{cite.id}]</span>
                                             <span className="text-muted-foreground text-xs mt-1 truncate max-w-sm">{cite.text}</span>
