@@ -1,26 +1,93 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { DownloadCloud, FileText, Filter } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { DownloadCloud, FileText, Filter, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import type { ManagerReportCategory, ManagerReportRecord } from "@/lib/demo-store";
 
-const initialReports = [
-    { id: 1, name: "Q1 Compliance Audit", date: "Mar 1, 2026", status: "Generated", type: "PDF" },
-    { id: 2, name: "HR vs IT Policy Conflicts", date: "Feb 15, 2026", status: "Generated", type: "CSV" },
-    { id: 3, name: "Monthly Search Volume Analytics", date: "Feb 1, 2026", status: "Generated", type: "PDF" },
-    { id: 4, name: "Data Security Policy Gaps", date: "Jan 20, 2026", status: "Archived", type: "PDF" },
-];
+type ReportsResponse = {
+    reports?: ManagerReportRecord[];
+    error?: string;
+};
+
+type ReportResponse = {
+    report?: ManagerReportRecord;
+    reports?: ManagerReportRecord[];
+    error?: string;
+};
+
+const focusLabels: Record<ManagerReportCategory, string> = {
+    policies: "Policy Portfolio",
+    compliance: "Compliance",
+    searches: "Search Analytics",
+    conflicts: "Conflict Register",
+};
+
+function toReportCategory(value: string | null): ManagerReportCategory | null {
+    if (
+        value === "policies" ||
+        value === "compliance" ||
+        value === "searches" ||
+        value === "conflicts"
+    ) {
+        return value;
+    }
+
+    return null;
+}
 
 export default function ReportsPage() {
-    const [reports, setReports] = useState(initialReports);
+    const searchParams = useSearchParams();
+    const focus = toReportCategory(searchParams.get("focus"));
+    const [reports, setReports] = useState<ManagerReportRecord[]>([]);
     const [statusFilter, setStatusFilter] = useState<"all" | "Generated" | "Archived">("all");
+    const [isLoading, setIsLoading] = useState(true);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const visibleReports = useMemo(
-        () => reports.filter((report) => statusFilter === "all" || report.status === statusFilter),
-        [reports, statusFilter],
-    );
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadReports = async () => {
+            try {
+                setIsLoading(true);
+                const response = await fetch("/api/manager/reports", { cache: "no-store" });
+                const payload = (await response.json()) as ReportsResponse;
+
+                if (!response.ok) {
+                    throw new Error(payload.error || "Unable to load reports.");
+                }
+
+                if (isMounted) {
+                    setReports(payload.reports || []);
+                    setError(null);
+                }
+            } catch (loadError: unknown) {
+                if (isMounted) {
+                    setError(loadError instanceof Error ? loadError.message : "Unable to load reports.");
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        void loadReports();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const visibleReports = reports.filter((report) => {
+        const matchesStatus = statusFilter === "all" || report.status === statusFilter;
+        const matchesFocus = !focus || report.category === focus;
+        return matchesStatus && matchesFocus;
+    });
 
     const toggleFilter = () => {
         setStatusFilter((current) => {
@@ -30,41 +97,60 @@ export default function ReportsPage() {
         });
     };
 
-    const generateReport = () => {
-        const nextId = reports.length ? Math.max(...reports.map((report) => report.id)) + 1 : 1;
-        const generatedDate = new Date().toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        });
+    const generateReport = async () => {
+        const category = focus || "compliance";
 
-        setReports((current) => [
-            {
-                id: nextId,
-                name: `Compliance Snapshot #${nextId}`,
-                date: generatedDate,
-                status: "Generated",
-                type: "PDF",
-            },
-            ...current,
-        ]);
-        setStatusFilter("all");
-        toast.success("New report generated and added to the top of the list.");
+        try {
+            setIsGenerating(true);
+            const response = await fetch("/api/manager/reports", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ category }),
+            });
+            const payload = (await response.json()) as ReportResponse;
+
+            if (!response.ok) {
+                throw new Error(payload.error || "Unable to generate report.");
+            }
+
+            setReports(payload.reports || []);
+            setStatusFilter("all");
+            setError(null);
+            toast.success(`${focusLabels[category]} report generated.`, {
+                description: payload.report?.name,
+            });
+        } catch (generationError: unknown) {
+            const message = generationError instanceof Error ? generationError.message : "Unable to generate report.";
+            setError(message);
+            toast.error(message);
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
-    const downloadReport = (reportName: string, reportType: string) => {
-        const fileContent = `Report: ${reportName}\nType: ${reportType}\nGenerated by PolicyMe manager dashboard.`;
-        const blob = new Blob([fileContent], { type: "text/plain;charset=utf-8;" });
+    const downloadReport = (report: ManagerReportRecord) => {
+        const fileContent = [
+            `Report: ${report.name}`,
+            `Category: ${focusLabels[report.category]}`,
+            `Status: ${report.status}`,
+            `Generated By: ${report.generatedBy}`,
+            `Date: ${report.date}`,
+            "",
+            report.summary,
+        ].join("\n");
+        const blob = new Blob([fileContent], { type: "text/plain;charset=utf-8" });
         const downloadUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = downloadUrl;
-        link.download = `${reportName.toLowerCase().replace(/\s+/g, "_")}.${reportType.toLowerCase()}`;
+        link.download = `${report.name.toLowerCase().replace(/[^a-z0-9]+/g, "_")}.${report.type.toLowerCase()}`;
         document.body.appendChild(link);
         link.click();
         link.remove();
         URL.revokeObjectURL(downloadUrl);
 
-        toast.success(`Downloading ${reportName}.`);
+        toast.success(`Downloading ${report.name}.`);
     };
 
     return (
@@ -79,58 +165,91 @@ export default function ReportsPage() {
                         <Filter className="h-4 w-4" />
                         Filter: {statusFilter === "all" ? "All" : statusFilter}
                     </Button>
-                    <Button onClick={generateReport} className="gap-2 bg-primary">
-                        <FileText className="h-4 w-4" />
+                    <Button onClick={() => void generateReport()} className="gap-2 bg-primary" disabled={isGenerating}>
+                        {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                         Generate New Report
                     </Button>
                 </div>
             </div>
 
+            {focus && (
+                <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+                    Focused drill-down: <span className="font-semibold">{focusLabels[focus]}</span>
+                </div>
+            )}
+
+            {error && (
+                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                </div>
+            )}
+
             <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                 <div className="grid grid-cols-12 gap-4 p-4 border-b border-border bg-muted/40 text-sm font-medium text-muted-foreground">
                     <div className="col-span-6 md:col-span-5">Report Name</div>
-                    <div className="col-span-3 md:col-span-3">Date</div>
-                    <div className="col-span-3 md:col-span-2 text-center">Status</div>
+                    <div className="col-span-3 md:col-span-2">Category</div>
+                    <div className="hidden md:block md:col-span-2">Date</div>
+                    <div className="col-span-3 md:col-span-1 text-center">Status</div>
                     <div className="hidden md:block md:col-span-2 text-right">Action</div>
                 </div>
 
                 <div className="divide-y divide-border">
-                    {visibleReports.map((report, i) => (
-                        <motion.div
-                            key={report.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/30 transition-colors group"
-                        >
-                            <div className="col-span-6 md:col-span-5 flex items-center gap-3">
-                                <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                                    {report.type}
+                    {isLoading ? (
+                        <div className="p-6 text-sm text-muted-foreground">Loading reports...</div>
+                    ) : visibleReports.length > 0 ? (
+                        visibleReports.map((report, index) => (
+                            <motion.div
+                                key={report.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.06 }}
+                                className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/30 transition-colors group"
+                            >
+                                <div className="col-span-6 md:col-span-5 flex items-start gap-3">
+                                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                        {report.type}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="font-medium truncate">{report.name}</div>
+                                        <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                            {report.summary}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                            Generated by {report.generatedBy}
+                                        </div>
+                                    </div>
                                 </div>
-                                <span className="font-medium truncate">{report.name}</span>
-                            </div>
-                            <div className="col-span-3 md:col-span-3 text-sm text-muted-foreground">
-                                {report.date}
-                            </div>
-                            <div className="col-span-3 md:col-span-2 text-center">
-                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${report.status === 'Generated' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-muted text-muted-foreground'
-                                    }`}>
-                                    {report.status}
-                                </span>
-                            </div>
-                            <div className="hidden md:flex md:col-span-2 justify-end">
-                                <Button
-                                    onClick={() => downloadReport(report.name, report.type)}
-                                    variant="ghost"
-                                    size="sm"
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity gap-2 h-8"
-                                >
-                                    <DownloadCloud className="h-4 w-4" /> Download
-                                </Button>
-                            </div>
-                        </motion.div>
-                    ))}
-                    {visibleReports.length === 0 && (
+                                <div className="col-span-3 md:col-span-2 text-sm text-muted-foreground">
+                                    {focusLabels[report.category]}
+                                </div>
+                                <div className="hidden md:block md:col-span-2 text-sm text-muted-foreground">
+                                    {report.date}
+                                </div>
+                                <div className="col-span-3 md:col-span-1 text-center">
+                                    <span
+                                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                            report.status === "Generated"
+                                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                                : "bg-muted text-muted-foreground"
+                                        }`}
+                                    >
+                                        {report.status}
+                                    </span>
+                                </div>
+                                <div className="hidden md:flex md:col-span-2 justify-end">
+                                    <Button
+                                        onClick={() => downloadReport(report)}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity gap-2 h-8"
+                                    >
+                                        <DownloadCloud className="h-4 w-4" />
+                                        Download
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        ))
+                    ) : (
                         <div className="p-6 text-sm text-muted-foreground">No reports match the selected filter.</div>
                     )}
                 </div>

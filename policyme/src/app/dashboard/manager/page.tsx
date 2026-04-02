@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -7,7 +8,8 @@ import {
     ShieldCheck,
     AlertTriangle,
     Search,
-    Eye
+    Eye,
+    type LucideIcon,
 } from "lucide-react";
 import {
     Table,
@@ -20,39 +22,104 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import MacroGraph from "@/components/GraphVisualization";
-import { toast } from "sonner";
+import type { ManagerConflictRecord, ManagerOverviewRecord } from "@/lib/demo-store";
 
-const kpis = [
-    { title: "Total Policies", value: "247", icon: FileText, color: "text-blue-500", trend: "+12 this month" },
-    { title: "Compliance Score", value: "92%", icon: ShieldCheck, color: "text-emerald-500", trend: "0% change" },
-    { title: "Active Conflicts", value: "18", icon: AlertTriangle, color: "text-destructive" },
-    { title: "Searches (30d)", value: "1,204", icon: Search, color: "text-primary", trend: "+15% vs last month" },
-];
+type ManagerOverviewResponse = {
+    overview?: (ManagerOverviewRecord & { activeConflicts: number });
+    conflicts?: ManagerConflictRecord[];
+    error?: string;
+};
 
-const conflicts = [
-    { id: "CF-1042", name: "Remote Work vs Data Security", type: "Contradiction", severity: "High", docs: "HR-042, IT-112" },
-    { id: "CF-1043", name: "Expense Policy Limits", type: "Ambiguity", severity: "Medium", docs: "FIN-019" },
-    { id: "CF-1044", name: "Device Usage Policy", type: "Contradiction", severity: "High", docs: "IT-005, HR-099" },
-    { id: "CF-1045", name: "Onboarding Timeline", type: "Ambiguity", severity: "Low", docs: "HR-002" },
-];
+type KpiCard = {
+    title: string;
+    value: string;
+    icon: LucideIcon;
+    color: string;
+    trend?: string;
+};
 
 export default function ManagerDashboard() {
     const router = useRouter();
+    const [overview, setOverview] = useState<(ManagerOverviewRecord & { activeConflicts: number }) | null>(null);
+    const [conflicts, setConflicts] = useState<ManagerConflictRecord[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadOverview = async () => {
+            try {
+                setIsLoading(true);
+                const response = await fetch("/api/manager/overview", { cache: "no-store" });
+                const payload = (await response.json()) as ManagerOverviewResponse;
+
+                if (!response.ok) {
+                    throw new Error(payload.error || "Unable to load manager overview.");
+                }
+
+                if (isMounted) {
+                    setOverview(payload.overview || null);
+                    setConflicts(payload.conflicts || []);
+                    setError(null);
+                }
+            } catch (loadError: unknown) {
+                if (isMounted) {
+                    setError(loadError instanceof Error ? loadError.message : "Unable to load manager overview.");
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        void loadOverview();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const kpis: KpiCard[] = [
+        {
+            title: "Total Policies",
+            value: overview ? String(overview.totalPolicies) : "--",
+            icon: FileText,
+            color: "text-blue-500",
+            trend: "+12 this month",
+        },
+        {
+            title: "Compliance Score",
+            value: overview ? `${overview.complianceScore}%` : "--",
+            icon: ShieldCheck,
+            color: "text-emerald-500",
+            trend: "0% change",
+        },
+        {
+            title: "Active Conflicts",
+            value: overview ? String(overview.activeConflicts) : "--",
+            icon: AlertTriangle,
+            color: "text-destructive",
+        },
+        {
+            title: "Searches (30d)",
+            value: overview ? overview.searches30d.toLocaleString() : "--",
+            icon: Search,
+            color: "text-primary",
+            trend: "+15% vs last month",
+        },
+    ];
 
     const openKpiTarget = (title: string) => {
-        if (title === "Active Conflicts") {
-            router.push("/dashboard/manager/conflicts");
-            return;
-        }
+        const destinations: Record<string, string> = {
+            "Total Policies": "/dashboard/manager/reports?focus=policies",
+            "Compliance Score": "/dashboard/manager/reports?focus=compliance",
+            "Active Conflicts": "/dashboard/manager/conflicts",
+            "Searches (30d)": "/dashboard/manager/reports?focus=searches",
+        };
 
-        if (title === "Searches (30d)") {
-            router.push("/dashboard/manager/reports");
-            return;
-        }
-
-        toast("KPI drill-down queued", {
-            description: `${title} detail dashboard is loading in a future release.`,
-        });
+        router.push(destinations[title] || "/dashboard/manager/reports");
     };
 
     const openConflict = (conflictId: string) => {
@@ -66,13 +133,19 @@ export default function ManagerDashboard() {
                 <p className="text-muted-foreground text-lg">Monitor policy intelligence and resolve conflicts.</p>
             </div>
 
+            {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+                    {error}
+                </div>
+            )}
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {kpis.map((kpi, i) => (
+                {kpis.map((kpi, index) => (
                     <motion.div
-                        key={i}
+                        key={kpi.title}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.1 }}
+                        transition={{ delay: index * 0.1 }}
                         onClick={() => openKpiTarget(kpi.title)}
                         className="rounded-xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-all relative overflow-hidden group cursor-pointer"
                     >
@@ -84,7 +157,7 @@ export default function ManagerDashboard() {
                             <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
                         </div>
                         <div>
-                            <div className="text-2xl font-bold mt-2">{kpi.value}</div>
+                            <div className="text-2xl font-bold mt-2">{isLoading ? "..." : kpi.value}</div>
                             {kpi.trend && (
                                 <p className="text-xs text-muted-foreground mt-1">
                                     {kpi.trend}
@@ -128,36 +201,56 @@ export default function ManagerDashboard() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {conflicts.map((conflict) => (
-                            <TableRow key={conflict.id} className="group hover:bg-muted/50 transition-colors">
-                                <TableCell className="font-mono text-xs text-muted-foreground">{conflict.id}</TableCell>
-                                <TableCell className="font-medium">{conflict.name}</TableCell>
-                                <TableCell>
-                                    <Badge variant={conflict.type === "Contradiction" ? "destructive" : "secondary"} className="bg-opacity-20">
-                                        {conflict.type}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <div className={`h-2 w-2 rounded-full ${conflict.severity === 'High' ? 'bg-destructive' : conflict.severity === 'Medium' ? 'bg-amber-500' : 'bg-green-500'}`} />
-                                        <span className="text-sm text-muted-foreground">{conflict.severity}</span>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">
-                                    {conflict.docs}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button
-                                        onClick={() => openConflict(conflict.id)}
-                                        variant="ghost"
-                                        size="icon"
-                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <Eye className="h-4 w-4" />
-                                    </Button>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-sm text-muted-foreground">
+                                    Loading conflict data...
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : conflicts.length > 0 ? (
+                            conflicts.map((conflict) => (
+                                <TableRow key={conflict.id} className="group hover:bg-muted/50 transition-colors">
+                                    <TableCell className="font-mono text-xs text-muted-foreground">{conflict.id}</TableCell>
+                                    <TableCell className="font-medium">{conflict.name}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={conflict.type === "Contradiction" ? "destructive" : "secondary"} className="bg-opacity-20">
+                                            {conflict.type}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`h-2 w-2 rounded-full ${
+                                                conflict.severity === "High"
+                                                    ? "bg-destructive"
+                                                    : conflict.severity === "Medium"
+                                                        ? "bg-amber-500"
+                                                        : "bg-green-500"
+                                            }`} />
+                                            <span className="text-sm text-muted-foreground">{conflict.severity}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground max-w-[220px] truncate">
+                                        {conflict.docs}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            onClick={() => openConflict(conflict.id)}
+                                            variant="ghost"
+                                            size="icon"
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-sm text-muted-foreground">
+                                    No active conflicts detected.
+                                </TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </motion.div>

@@ -5,57 +5,60 @@ import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { AlertTriangle, BookOpen, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import type { ManagerConflictRecord, ManagerConflictResolution } from "@/lib/demo-store";
+
+type ConflictsResponse = {
+    conflicts?: ManagerConflictRecord[];
+    error?: string;
+};
+
+type ConflictResponse = {
+    conflict?: ManagerConflictRecord;
+    error?: string;
+};
 
 export default function ConflictsPage() {
     const searchParams = useSearchParams();
-    const [resolved, setResolved] = useState<string[]>([]);
     const focusedConflictId = searchParams.get("focus");
+    const [conflicts, setConflicts] = useState<ManagerConflictRecord[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isResolving, setIsResolving] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const conflicts = [
-        {
-            id: "CONF-9281",
-            severity: "High",
-            description: "Contradiction in Rental Car Reimbursement limits.",
-            sourceA: {
-                doc: "Master Auto Policy 2026.pdf",
-                section: "Section 4.1",
-                text: "Rental car reimbursement is limited to $40/day for a maximum of 30 days."
-            },
-            sourceB: {
-                doc: "Premium Rider Addendum.pdf",
-                section: "Clause 2B",
-                text: "Premium policyholders are entitled to unlimited rental car reimbursement up to $75/day."
-            },
-            affectedClaims: 14
-        },
-        {
-            id: "CONF-9282",
-            severity: "Medium",
-            description: "Ambiguous definition of 'Flood Damage'.",
-            sourceA: {
-                doc: "Homeowners Policy Base.pdf",
-                section: "Exclusions 3(a)",
-                text: "Damage caused by surface water, waves, or tidal water is excluded."
-            },
-            sourceB: {
-                doc: "Water Backup Endorsement.pdf",
-                section: "Coverage",
-                text: "Covers water backing up through sewers or drains, or overflowing from a sump."
-            },
-            affectedClaims: 3
-        }
-    ];
+    useEffect(() => {
+        let isMounted = true;
 
-    const handleResolve = (id: string, resolution: "A" | "B") => {
-        if (resolved.includes(id)) {
-            return;
-        }
+        const loadConflicts = async () => {
+            try {
+                setIsLoading(true);
+                const response = await fetch("/api/manager/conflicts", { cache: "no-store" });
+                const payload = (await response.json()) as ConflictsResponse;
 
-        setResolved([...resolved, id]);
-        toast.success(`${id} resolved with Source ${resolution}.`, {
-            description: "Knowledge graph updates have been queued.",
-        });
-    };
+                if (!response.ok) {
+                    throw new Error(payload.error || "Unable to load conflict data.");
+                }
+
+                if (isMounted) {
+                    setConflicts(payload.conflicts || []);
+                    setError(null);
+                }
+            } catch (loadError: unknown) {
+                if (isMounted) {
+                    setError(loadError instanceof Error ? loadError.message : "Unable to load conflict data.");
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        void loadConflicts();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     useEffect(() => {
         if (!focusedConflictId) {
@@ -67,25 +70,73 @@ export default function ConflictsPage() {
         });
     }, [focusedConflictId]);
 
+    const handleResolve = async (id: string, resolution: ManagerConflictResolution) => {
+        if (isResolving === id) {
+            return;
+        }
+
+        try {
+            setIsResolving(id);
+            const response = await fetch(`/api/manager/conflicts/${id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ resolution }),
+            });
+            const payload = (await response.json()) as ConflictResponse;
+
+            if (!response.ok || !payload.conflict) {
+                throw new Error(payload.error || "Unable to resolve conflict.");
+            }
+
+            setConflicts((current) =>
+                current.map((conflict) =>
+                    conflict.id === id ? payload.conflict as ManagerConflictRecord : conflict
+                )
+            );
+            setError(null);
+            toast.success(`${id} resolved with Source ${resolution}.`, {
+                description: "Knowledge graph updates have been recorded.",
+            });
+        } catch (resolveError: unknown) {
+            const message = resolveError instanceof Error ? resolveError.message : "Unable to resolve conflict.";
+            setError(message);
+            toast.error(message);
+        } finally {
+            setIsResolving(null);
+        }
+    };
+
+    const openConflicts = conflicts.filter((conflict) => conflict.status === "Open");
+
     return (
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Active Conflicts</h1>
                 <p className="text-muted-foreground mt-2">
-                    GraphRAG has detected potential contradictions in the uploaded policy documents. Resolve these to improve AI accuracy.
+                    GraphRAG has detected contradictions and ambiguities in uploaded policy language. Resolve them to improve downstream AI accuracy.
                 </p>
             </div>
 
-            <div className="space-y-4">
-                {conflicts.map((conflict, i) => {
-                    if (resolved.includes(conflict.id)) return null;
+            {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+                    {error}
+                </div>
+            )}
 
-                    return (
+            <div className="space-y-4">
+                {isLoading ? (
+                    <div className="rounded-xl border border-border bg-card px-5 py-6 text-sm text-muted-foreground">
+                        Loading conflict data...
+                    </div>
+                ) : openConflicts.length > 0 ? (
+                    openConflicts.map((conflict, index) => (
                         <motion.div
                             key={conflict.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
+                            transition={{ delay: index * 0.08 }}
                             className={`rounded-xl border overflow-hidden ${
                                 focusedConflictId === conflict.id
                                     ? "border-primary/40 ring-2 ring-primary/20"
@@ -112,7 +163,6 @@ export default function ConflictsPage() {
                             </div>
 
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Source A */}
                                 <div className="rounded-lg border bg-background p-4 flex flex-col">
                                     <div className="flex items-center gap-2 mb-3">
                                         <BookOpen className="h-4 w-4 text-primary" />
@@ -123,14 +173,15 @@ export default function ConflictsPage() {
                                         &ldquo;{conflict.sourceA.text}&rdquo;
                                     </p>
                                     <button
-                                        onClick={() => handleResolve(conflict.id, "A")}
-                                        className="mt-4 w-full py-2 bg-secondary text-secondary-foreground text-sm font-medium rounded-md hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
+                                        onClick={() => void handleResolve(conflict.id, "A")}
+                                        disabled={isResolving === conflict.id}
+                                        className="mt-4 w-full py-2 bg-secondary text-secondary-foreground text-sm font-medium rounded-md hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
                                     >
-                                        <CheckCircle2 className="h-4 w-4" /> Enforce Source A
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        {isResolving === conflict.id ? "Resolving..." : "Enforce Source A"}
                                     </button>
                                 </div>
 
-                                {/* Source B */}
                                 <div className="rounded-lg border bg-background p-4 flex flex-col">
                                     <div className="flex items-center gap-2 mb-3">
                                         <BookOpen className="h-4 w-4 text-blue-500" />
@@ -141,18 +192,18 @@ export default function ConflictsPage() {
                                         &ldquo;{conflict.sourceB.text}&rdquo;
                                     </p>
                                     <button
-                                        onClick={() => handleResolve(conflict.id, "B")}
-                                        className="mt-4 w-full py-2 bg-blue-500/10 text-blue-500 text-sm font-medium rounded-md hover:bg-blue-500/20 transition-colors flex items-center justify-center gap-2"
+                                        onClick={() => void handleResolve(conflict.id, "B")}
+                                        disabled={isResolving === conflict.id}
+                                        className="mt-4 w-full py-2 bg-blue-500/10 text-blue-500 text-sm font-medium rounded-md hover:bg-blue-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
                                     >
-                                        <CheckCircle2 className="h-4 w-4" /> Enforce Source B
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        {isResolving === conflict.id ? "Resolving..." : "Enforce Source B"}
                                     </button>
                                 </div>
                             </div>
                         </motion.div>
-                    );
-                })}
-
-                {resolved.length === conflicts.length && (
+                    ))
+                ) : (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -161,9 +212,9 @@ export default function ConflictsPage() {
                         <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
                             <CheckCircle2 className="h-8 w-8 text-emerald-500" />
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">All Conflicts Resolved!</h3>
+                        <h3 className="text-xl font-semibold mb-2">All Conflicts Resolved</h3>
                         <p className="text-muted-foreground max-w-md mx-auto">
-                            The GraphRAG knowledge base has been updated across the organization. AI accuracy is now optimal.
+                            The current contradiction register is clear. New findings will appear here as the knowledge graph is reprocessed.
                         </p>
                     </motion.div>
                 )}
