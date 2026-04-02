@@ -15,7 +15,7 @@ const ROUTE_ROLE_MAP: Record<string, string[]> = {
     "/dashboard/admin":       ["Admin"],
 };
 
-const PUBLIC_PREFIXES = ["/", "/login", "/signup", "/api/auth"];
+const PUBLIC_PREFIXES = ["/", "/login", "/signup", "/terms", "/privacy", "/support", "/api/auth"];
 
 function isPublicRoute(pathname: string): boolean {
     // Exact match for "/"
