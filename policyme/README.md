@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## PolicyMe Frontend
 
-## Getting Started
+Next.js application for the PolicyMe insurance platform.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 20+
+- npm 10+
+- Running backend services:
+	- Java ingestion API (default: `http://localhost:8081`)
+	- Python GraphRAG API (default: `http://localhost:8000`)
+
+## Environment Variables
+
+Create a `.env.local` file with the variables you use in your environment.
+
+Required for Supabase-backed admin users API:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Optional service URLs (defaults shown):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+INGESTION_API_URL=http://localhost:8081
+GRAPHRAG_API_URL=http://localhost:8000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Authentication variables (if using OAuth providers):
 
-## Learn More
+```bash
+AZURE_AD_CLIENT_ID=
+AZURE_AD_CLIENT_SECRET=
+AZURE_AD_TENANT_ID=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Supabase Setup (Admin Users)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Run the SQL migration in your Supabase SQL editor:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `supabase/migrations/0001_create_app_users.sql`
 
-## Deploy on Vercel
+This creates `public.app_users`, an update trigger, an activity index, and sample seed users.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The admin users API route now reads from Supabase:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `GET /api/admin/users`
+- Optional query parameter: `limit` (default `100`, max `500`)
+
+## Install And Run
+
+```bash
+npm install
+npm run dev
+```
+
+App runs at `http://localhost:3000`.
