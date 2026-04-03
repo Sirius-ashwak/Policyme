@@ -14,6 +14,11 @@ type AppUserRow = {
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
+const RUNTIME_ENV = (process.env.APP_ENV || process.env.NODE_ENV || "local").toLowerCase();
+const DEMO_FALLBACK_ALLOWED =
+    RUNTIME_ENV === "local" ||
+    RUNTIME_ENV === "development" ||
+    process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 function parseLimit(req: NextRequest): number {
     const raw = req.nextUrl.searchParams.get("limit");
@@ -81,6 +86,16 @@ export async function GET(req: NextRequest) {
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Unknown error";
         console.error("Supabase admin users API error:", message);
+
+        if (!DEMO_FALLBACK_ALLOWED) {
+            return NextResponse.json(
+                {
+                    error: "Supabase admin users unavailable and demo fallback is disabled.",
+                    details: message,
+                },
+                { status: 503 }
+            );
+        }
 
         return NextResponse.json(
             {

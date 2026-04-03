@@ -4,10 +4,23 @@ import {
     resolveManagerConflict,
 } from "@/lib/demo-store";
 
+const RUNTIME_ENV = (process.env.APP_ENV || process.env.NODE_ENV || "local").toLowerCase();
+const DEMO_ALLOWED =
+    RUNTIME_ENV === "local" ||
+    RUNTIME_ENV === "development" ||
+    process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 export async function PATCH(
     req: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
+    if (!DEMO_ALLOWED) {
+        return NextResponse.json(
+            { error: "Manager conflict resolution demo endpoint is disabled outside local/demo mode." },
+            { status: 501 }
+        );
+    }
+
     const payload = (await req.json().catch(() => ({}))) as { resolution?: ManagerConflictResolution };
     const params = await context.params;
 
