@@ -1,12 +1,12 @@
 "use client";
 
 import {
-    Button,
     Tabs,
     TabsContent,
     TabsList,
     TabsTrigger,
-} from "@relume_io/relume-ui";
+} from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import React from "react";
 import { RxChevronRight } from "react-icons/rx";
 import Link from "next/link";
@@ -70,21 +70,17 @@ export function Layout503() {
                         Admins with appropriate access controls.
                     </p>
                     <div className="mt-6 flex items-center justify-center gap-4">
-                        <Link href="/dashboard/adjuster">
-                            <Button title="Try Adjuster View" variant="secondary">
+                        <Button asChild variant="secondary">
+                            <Link href="/dashboard/adjuster">
                                 Try Adjuster View
-                            </Button>
-                        </Link>
-                        <Link href="/dashboard/manager">
-                            <Button
-                                title="Manager Center"
-                                variant="link"
-                                size="link"
-                                iconRight={<RxChevronRight />}
-                            >
+                            </Link>
+                        </Button>
+                        <Button asChild variant="link" className="px-0">
+                            <Link href="/dashboard/manager">
                                 Manager Center
-                            </Button>
-                        </Link>
+                                <RxChevronRight />
+                            </Link>
+                        </Button>
                     </div>
                 </div>
 
@@ -123,14 +119,13 @@ export function Layout503() {
                                     </p>
                                     <div className="mt-6">
                                         {t.href ? (
-                                            <Link href={t.href}>
-                                                <Button title={t.buttonText} variant="secondary">
+                                            <Button asChild variant="secondary">
+                                                <Link href={t.href}>
                                                     {t.buttonText}
-                                                </Button>
-                                            </Link>
+                                                </Link>
+                                            </Button>
                                         ) : (
                                             <Button
-                                                title={t.buttonText}
                                                 variant="secondary"
                                                 disabled
                                             >

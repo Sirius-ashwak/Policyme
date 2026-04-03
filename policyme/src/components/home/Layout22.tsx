@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@relume_io/relume-ui";
+import { Button } from "@/components/ui/button";
 import React from "react";
 import { RxChevronRight } from "react-icons/rx";
 import Link from "next/link";
@@ -25,18 +25,17 @@ export function Layout22() {
                             queryable, and alive.
                         </p>
                         <div className="mt-6 flex flex-wrap items-center gap-4">
-                            <Link href="/dashboard/adjuster">
-                                <Button title="Explore" variant="secondary">
+                            <Button asChild variant="secondary">
+                                <Link href="/dashboard/adjuster">
                                     Explore
-                                </Button>
-                            </Link>
+                                </Link>
+                            </Button>
                             <Button
-                                title="Learn how it works"
                                 variant="link"
-                                size="link"
-                                iconRight={<RxChevronRight />}
+                                className="px-0"
                             >
                                 Learn how it works
+                                <RxChevronRight />
                             </Button>
                         </div>
                     </div>

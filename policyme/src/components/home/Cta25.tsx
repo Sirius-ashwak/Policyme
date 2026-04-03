@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@relume_io/relume-ui";
+import { Button } from "@/components/ui/button";
 import React from "react";
 import Link from "next/link";
 
@@ -22,16 +22,16 @@ export function Cta25() {
                             </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-4 md:justify-end">
-                            <Link href="/dashboard/adjuster">
-                                <Button title="Start Building" variant="secondary" className="bg-background text-foreground hover:bg-background/90">
+                            <Button asChild variant="secondary" className="bg-background text-foreground hover:bg-background/90">
+                                <Link href="/dashboard/adjuster">
                                     Start Building →
-                                </Button>
-                            </Link>
-                            <Link href="/dashboard/manager">
-                                <Button title="Contact Sales" variant="link" className="text-background/80 hover:text-background">
+                                </Link>
+                            </Button>
+                            <Button asChild variant="link" className="text-background/80 hover:text-background">
+                                <Link href="/dashboard/manager">
                                     Contact Sales
-                                </Button>
-                            </Link>
+                                </Link>
+                            </Button>
                         </div>
                     </div>
                 </div>

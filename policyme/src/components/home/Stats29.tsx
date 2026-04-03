@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@relume_io/relume-ui";
+import { Button } from "@/components/ui/button";
 import React from "react";
 import { RxChevronRight } from "react-icons/rx";
 import Link from "next/link";
@@ -31,16 +31,12 @@ export function Stats29() {
                             and IT teams stay compliant without the manual overhead.
                         </p>
                         <div className="mt-4">
-                            <Link href="/dashboard/manager">
-                                <Button
-                                    title="See case studies"
-                                    variant="link"
-                                    size="link"
-                                    iconRight={<RxChevronRight />}
-                                >
+                            <Button asChild variant="link" className="px-0">
+                                <Link href="/dashboard/manager">
                                     See case studies
-                                </Button>
-                            </Link>
+                                    <RxChevronRight />
+                                </Link>
+                            </Button>
                         </div>
                     </div>
                 </div>

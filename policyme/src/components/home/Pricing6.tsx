@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@relume_io/relume-ui";
+import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
@@ -108,15 +108,13 @@ export function Pricing6() {
                                 </ul>
                             </div>
                             <div className="mt-8">
-                                <Link href={plan.href} className="block">
-                                    <Button
-                                        title={plan.cta}
-                                        variant={plan.highlighted ? "primary" : "secondary"}
-                                        className="w-full justify-center"
-                                    >
-                                        {plan.cta}
-                                    </Button>
-                                </Link>
+                                <Button
+                                    asChild
+                                    variant={plan.highlighted ? "default" : "secondary"}
+                                    className="w-full justify-center"
+                                >
+                                    <Link href={plan.href}>{plan.cta}</Link>
+                                </Button>
                             </div>
                         </div>
                     ))}

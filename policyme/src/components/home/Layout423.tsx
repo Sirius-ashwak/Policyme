@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@relume_io/relume-ui";
+import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useState } from "react";
 import { RxChevronRight } from "react-icons/rx";
@@ -87,11 +87,10 @@ export function Layout423() {
                                             </p>
                                             <Button
                                                 variant="link"
-                                                size="link"
-                                                iconRight={<RxChevronRight />}
                                                 className="mt-3 p-0"
                                             >
                                                 Learn more
+                                                <RxChevronRight />
                                             </Button>
                                         </motion.div>
                                     )}

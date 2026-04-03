@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@relume_io/relume-ui";
+import { Button } from "@/components/ui/button";
 import React from "react";
 import Link from "next/link";
 
@@ -23,16 +23,16 @@ export function Header84() {
                             conflicts, and maintain compliance across your entire organization.
                         </p>
                         <div className="mt-8 flex flex-wrap items-center gap-4">
-                            <Link href="/dashboard/adjuster">
-                                <Button title="Get Started" variant="primary">
+                            <Button asChild variant="default">
+                                <Link href="/dashboard/adjuster">
                                     Get Started
-                                </Button>
-                            </Link>
-                            <Link href="/dashboard/manager">
-                                <Button title="Contact Sales" variant="secondary">
+                                </Link>
+                            </Button>
+                            <Button asChild variant="secondary">
+                                <Link href="/dashboard/manager">
                                     Contact Sales
-                                </Button>
-                            </Link>
+                                </Link>
+                            </Button>
                         </div>
                     </div>
 
