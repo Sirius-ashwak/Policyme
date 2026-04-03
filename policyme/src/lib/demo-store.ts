@@ -294,12 +294,12 @@ function createTimestamp(date: string): string {
 function formatCurrency(input: string): string {
     const numeric = Number.parseFloat(input.replace(/[^0-9.]/g, ""));
     if (!Number.isFinite(numeric)) {
-        return input.trim() || "$0";
+        return input.trim() || "₹0";
     }
 
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
         style: "currency",
-        currency: "USD",
+        currency: "INR",
         maximumFractionDigits: 0,
     }).format(numeric);
 }
@@ -525,7 +525,7 @@ function makeSeedClaims(): ClaimRecord[] {
             incidentDate: "2023-10-14",
             location: "San Francisco, CA",
             description: "A highway rock struck the front windshield during evening traffic and created a full-width crack that requires replacement.",
-            estimatedAmount: "$1,250",
+            estimatedAmount: "₹1,250",
             createdAt: createTimestamp("2023-10-14T09:42:00Z"),
             updatedAt: createTimestamp("2023-10-14T13:20:00Z"),
             highlighted: false,
@@ -544,7 +544,7 @@ function makeSeedClaims(): ClaimRecord[] {
                     timestamp: createTimestamp("2023-10-14T13:20:00Z"),
                 },
             ],
-            analysis: buildClaimAnalysis("auto-comprehensive", "$1250"),
+            analysis: buildClaimAnalysis("auto-comprehensive", "₹1250"),
         },
         {
             id: "CL-88401",
@@ -557,7 +557,7 @@ function makeSeedClaims(): ClaimRecord[] {
             incidentDate: "2023-08-03",
             location: "Oakland, CA",
             description: "Vehicle sustained rear bumper and trunk damage after being struck at a stoplight.",
-            estimatedAmount: "$4,250",
+            estimatedAmount: "₹4,250",
             createdAt: createTimestamp("2023-08-03T16:10:00Z"),
             updatedAt: createTimestamp("2023-08-05T11:00:00Z"),
             highlighted: false,
@@ -577,7 +577,7 @@ function makeSeedClaims(): ClaimRecord[] {
                     timestamp: createTimestamp("2023-08-05T11:00:00Z"),
                 },
             ],
-            analysis: buildClaimAnalysis("auto-collision", "$4250"),
+            analysis: buildClaimAnalysis("auto-collision", "₹4250"),
         },
         {
             id: "CL-77219",
@@ -590,7 +590,7 @@ function makeSeedClaims(): ClaimRecord[] {
             incidentDate: "2023-03-18",
             location: "San Jose, CA",
             description: "A burst supply line flooded the kitchen and adjacent hallway, damaging cabinetry and flooring.",
-            estimatedAmount: "$8,900",
+            estimatedAmount: "₹8,900",
             createdAt: createTimestamp("2023-03-18T07:25:00Z"),
             updatedAt: createTimestamp("2023-03-18T08:00:00Z"),
             highlighted: true,
@@ -610,7 +610,7 @@ function makeSeedClaims(): ClaimRecord[] {
                     timestamp: createTimestamp("2023-03-18T08:00:00Z"),
                 },
             ],
-            analysis: buildClaimAnalysis("property", "$8900"),
+            analysis: buildClaimAnalysis("property", "₹8900"),
         },
     ];
 }
@@ -626,8 +626,8 @@ function makeSeedApplications(): UnderwritingApplication[] {
             policyIcon: "home",
             submittedAt: "2023-10-24",
             status: "Under Review",
-            requestedCoverage: "$2,500,000",
-            assetValue: "$14.2M",
+            requestedCoverage: "₹2,500,000",
+            assetValue: "₹14.2M",
             location: "452 Meridian Avenue, San Francisco, CA",
             claimsHistory: "1 low-severity property claim in 8 years",
             description: "Mixed-use commercial plaza with upgraded fire suppression and strong tenant credit profile.",
@@ -664,8 +664,8 @@ function makeSeedApplications(): UnderwritingApplication[] {
             policyIcon: "directions_car",
             submittedAt: "2023-10-23",
             status: "Pending Review",
-            requestedCoverage: "$750,000",
-            assetValue: "$480,000",
+            requestedCoverage: "₹750,000",
+            assetValue: "₹480,000",
             location: "Oakland, CA",
             claimsHistory: "3 collision losses in 24 months",
             description: "Fleet coverage request for executive and courier vehicles operating across the Bay Area.",
@@ -700,8 +700,8 @@ function makeSeedApplications(): UnderwritingApplication[] {
             policyIcon: "shield",
             submittedAt: "2023-10-23",
             status: "Under Review",
-            requestedCoverage: "$900,000",
-            assetValue: "$1.1M",
+            requestedCoverage: "₹900,000",
+            assetValue: "₹1.1M",
             location: "San Francisco, CA",
             claimsHistory: "No prior losses",
             description: "Primary residence with recent roof replacement and monitored security system.",
@@ -736,8 +736,8 @@ function makeSeedApplications(): UnderwritingApplication[] {
             policyIcon: "favorite",
             submittedAt: "2023-10-22",
             status: "Pending Review",
-            requestedCoverage: "$1,200,000",
-            assetValue: "$3.6M",
+            requestedCoverage: "₹1,200,000",
+            assetValue: "₹3.6M",
             location: "San Mateo, CA",
             claimsHistory: "Open malpractice dispute and 2 prior high-cost claims",
             description: "Multi-site clinic network requesting expanded health and liability coverage.",
@@ -773,16 +773,16 @@ function makeSeedCustomerPolicies(): CustomerPolicyRecord[] {
             name: "Comprehensive Auto Insurance",
             type: "Auto",
             status: "Active",
-            premium: "$142/mo",
+            premium: "₹142/mo",
             startDate: "2026-01-01",
             endDate: "2026-12-31",
             coverage: [
-                { item: "Collision Damage", limit: "$50,000", deductible: "$500" },
-                { item: "Comprehensive (Theft, Weather)", limit: "$50,000", deductible: "$250" },
-                { item: "Bodily Injury Liability", limit: "$100,000 per person", deductible: "None" },
-                { item: "Property Damage Liability", limit: "$50,000", deductible: "None" },
-                { item: "Windshield Replacement", limit: "Full coverage", deductible: "$0" },
-                { item: "Rental Car Reimbursement", limit: "$40/day, 30 days max", deductible: "None" },
+                { item: "Collision Damage", limit: "₹50,000", deductible: "₹500" },
+                { item: "Comprehensive (Theft, Weather)", limit: "₹50,000", deductible: "₹250" },
+                { item: "Bodily Injury Liability", limit: "₹100,000 per person", deductible: "None" },
+                { item: "Property Damage Liability", limit: "₹50,000", deductible: "None" },
+                { item: "Windshield Replacement", limit: "Full coverage", deductible: "₹0" },
+                { item: "Rental Car Reimbursement", limit: "₹40/day, 30 days max", deductible: "None" },
             ],
         },
         {
@@ -790,14 +790,14 @@ function makeSeedCustomerPolicies(): CustomerPolicyRecord[] {
             name: "Homeowner's Insurance",
             type: "Property",
             status: "Active",
-            premium: "$210/mo",
+            premium: "₹210/mo",
             startDate: "2026-03-01",
             endDate: "2027-02-28",
             coverage: [
-                { item: "Dwelling Coverage", limit: "$350,000", deductible: "$1,000" },
-                { item: "Personal Property", limit: "$175,000", deductible: "$500" },
-                { item: "Liability Protection", limit: "$300,000", deductible: "None" },
-                { item: "Water Damage (Non-Flood)", limit: "$50,000", deductible: "$1,000" },
+                { item: "Dwelling Coverage", limit: "₹350,000", deductible: "₹1,000" },
+                { item: "Personal Property", limit: "₹175,000", deductible: "₹500" },
+                { item: "Liability Protection", limit: "₹300,000", deductible: "None" },
+                { item: "Water Damage (Non-Flood)", limit: "₹50,000", deductible: "₹1,000" },
             ],
         },
     ];
@@ -805,7 +805,7 @@ function makeSeedCustomerPolicies(): CustomerPolicyRecord[] {
 
 function makeSeedCustomerBilling(): CustomerBillingRecord {
     return {
-        nextPaymentAmount: "$247.50",
+        nextPaymentAmount: "₹247.50",
         nextPaymentDate: "2026-04-24",
         autoPay: true,
         paymentMethod: {
@@ -815,9 +815,9 @@ function makeSeedCustomerBilling(): CustomerBillingRecord {
             holderName: "Sarah Mitchell",
         },
         history: [
-            { id: "PAY-20260324", date: "2026-03-24", amount: "$247.50", status: "Paid", reference: "INV-2026-03" },
-            { id: "PAY-20260224", date: "2026-02-24", amount: "$247.50", status: "Paid", reference: "INV-2026-02" },
-            { id: "PAY-20260124", date: "2026-01-24", amount: "$247.50", status: "Paid", reference: "INV-2026-01" },
+            { id: "PAY-20260324", date: "2026-03-24", amount: "₹247.50", status: "Paid", reference: "INV-2026-03" },
+            { id: "PAY-20260224", date: "2026-02-24", amount: "₹247.50", status: "Paid", reference: "INV-2026-02" },
+            { id: "PAY-20260124", date: "2026-01-24", amount: "₹247.50", status: "Paid", reference: "INV-2026-01" },
         ],
     };
 }
@@ -1030,12 +1030,12 @@ function makeSeedManagerConflicts(): ManagerConflictRecord[] {
             sourceA: {
                 doc: "Master Auto Policy 2026.pdf",
                 section: "Section 4.1",
-                text: "Rental car reimbursement is limited to $40/day for a maximum of 30 days.",
+                text: "Rental car reimbursement is limited to ₹40/day for a maximum of 30 days.",
             },
             sourceB: {
                 doc: "Premium Rider Addendum.pdf",
                 section: "Clause 2B",
-                text: "Premium policyholders are entitled to unlimited rental car reimbursement up to $75/day.",
+                text: "Premium policyholders are entitled to unlimited rental car reimbursement up to ₹75/day.",
             },
             affectedClaims: 14,
             lastDetectedAt: createTimestamp("2026-04-02T08:40:00Z"),
@@ -1074,12 +1074,12 @@ function makeSeedManagerConflicts(): ManagerConflictRecord[] {
             sourceA: {
                 doc: "Fleet Cargo Rider.pdf",
                 section: "Article 5",
-                text: "The maximum payable cargo theft limit is $150,000 per occurrence.",
+                text: "The maximum payable cargo theft limit is ₹150,000 per occurrence.",
             },
             sourceB: {
                 doc: "Commercial Auto Schedule.pdf",
                 section: "Schedule 7",
-                text: "Overnight theft losses are capped at $75,000 per occurrence unless guarded parking is documented.",
+                text: "Overnight theft losses are capped at ₹75,000 per occurrence unless guarded parking is documented.",
             },
             affectedClaims: 8,
             lastDetectedAt: createTimestamp("2026-03-31T14:25:00Z"),
@@ -1658,7 +1658,7 @@ export function listManagerReports(): ManagerReportRecord[] {
 export function createManagerReport(category: ManagerReportCategory = "compliance"): ManagerReportRecord {
     const store = getStore();
     const nextId = store.managerReports.reduce((maxId, report) => Math.max(maxId, report.id), 0) + 1;
-    const generatedDate = new Intl.DateTimeFormat("en-US", {
+    const generatedDate = new Intl.DateTimeFormat("en-IN", {
         month: "short",
         day: "numeric",
         year: "numeric",

@@ -200,12 +200,12 @@ function fallbackResult<T>(domain: string, error: unknown, data: T): RepositoryR
 function formatCurrency(input: string): string {
     const numeric = Number.parseFloat(input.replace(/[^0-9.]/g, ""));
     if (!Number.isFinite(numeric)) {
-        return input.trim() || "$0";
+        return input.trim() || "₹0";
     }
 
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
         style: "currency",
-        currency: "USD",
+        currency: "INR",
         maximumFractionDigits: 0,
     }).format(numeric);
 }
@@ -480,13 +480,13 @@ function asClaimTimeline(value: unknown): ClaimTimelineEntry[] {
 
 function asClaimAnalysis(value: unknown): ClaimAnalysis {
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
-        return buildClaimAnalysis("auto", "$0");
+        return buildClaimAnalysis("auto", "₹0");
     }
 
     const entry = value as Record<string, unknown>;
     return {
         recommendation: entry.recommendation === "reject" ? "reject" : "approve",
-        payoutEstimate: typeof entry.payoutEstimate === "string" ? entry.payoutEstimate : "$0",
+        payoutEstimate: typeof entry.payoutEstimate === "string" ? entry.payoutEstimate : "₹0",
         reasoning: Array.isArray(entry.reasoning)
             ? entry.reasoning.filter((item): item is string => typeof item === "string")
             : [],
