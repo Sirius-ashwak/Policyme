@@ -1,9 +1,8 @@
-version: '3.8'
-
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: policyme-zookeeper
+    restart: unless-stopped
     ports:
       - "2181:2181"
     environment:
@@ -13,6 +12,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: policyme-kafka
+    restart: unless-stopped
     depends_on:
       - zookeeper
     ports:
@@ -26,10 +26,14 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_MESSAGE_MAX_BYTES: 10485760
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 10485760
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 20971520
 
   neo4j:
     image: neo4j:5.17.0
     container_name: policyme-neo4j
+    restart: unless-stopped
     ports:
       - "7474:7474"
       - "7687:7687"
@@ -39,5 +43,78 @@ services:
     volumes:
       - neo4j_data:/data
 
+  graphrag-api:
+    build:
+      context: ../policyme-graphrag-engine
+      dockerfile: Dockerfile
+    container_name: policyme-graphrag-api
+    restart: unless-stopped
+    depends_on:
+      - kafka
+      - neo4j
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      ENABLE_MOCKS: ${ENABLE_MOCKS:-true}
+      STRICT_STARTUP: ${STRICT_STARTUP:-false}
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC: policyme.document.uploaded
+      NEO4J_URI: neo4j://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: policyme_secret
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  graphrag-consumer:
+    build:
+      context: ../policyme-graphrag-engine
+      dockerfile: Dockerfile
+    container_name: policyme-graphrag-consumer
+    restart: unless-stopped
+    depends_on:
+      - kafka
+      - neo4j
+    command: ["python", "kafka_consumer.py"]
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      ENABLE_MOCKS: ${ENABLE_MOCKS:-true}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC: policyme.document.uploaded
+      NEO4J_URI: neo4j://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: policyme_secret
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+
+  ingestion-api:
+    image: maven:3.9.8-eclipse-temurin-17
+    container_name: policyme-ingestion-api
+    restart: unless-stopped
+    working_dir: /workspace
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./:/workspace
+      - maven_cache:/root/.m2
+    environment:
+      ENABLE_MOCKS: "true"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+      CORS_ALLOW_CREDENTIALS: "true"
+      S3_BUCKET_NAME: policyme-documents
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+    command: ["mvn", "-q", "spring-boot:run"]
+
 volumes:
   neo4j_data:
+  maven_cache:
