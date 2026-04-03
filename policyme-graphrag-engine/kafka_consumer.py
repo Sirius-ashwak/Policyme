@@ -52,6 +52,16 @@ def parse_float(value: str, default: float) -> float:
 APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
 ENABLE_MOCKS = parse_bool(os.getenv("ENABLE_MOCKS"), default=False)
 ALLOW_MOCKS = APP_ENV == "local" and ENABLE_MOCKS
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
+
+
+def has_real_gemini_key(api_key: str) -> bool:
+    if not api_key:
+        return False
+    normalized = api_key.strip()
+    if normalized.upper() in {"PASTE_YOUR_KEY_HERE", "YOUR_GEMINI_API_KEY"}:
+        return False
+    return True
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "policyme.document.uploaded")
@@ -73,7 +83,7 @@ except ImportError:
     logger.warning("aiokafka not installed. Running in mock consumer mode.")
 
 # Gemini Embeddings
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+gemini_client = genai.Client(api_key=GEMINI_API_KEY) if has_real_gemini_key(GEMINI_API_KEY) else None
 
 
 def deserialize_kafka_message(payload: bytes) -> Dict[str, Any]:
@@ -117,6 +127,11 @@ def build_mock_embedding(text: str) -> list[float]:
 
 async def get_embedding(text: str):
     """Get embedding from Gemini text-embedding-004, with local-only mock fallback."""
+    if gemini_client is None:
+        if ALLOW_MOCKS:
+            return build_mock_embedding(text)
+        raise RuntimeError("GEMINI_API_KEY is missing or invalid and mock fallbacks are disabled.")
+
     try:
         response = gemini_client.models.embed_content(
             model="text-embedding-004",

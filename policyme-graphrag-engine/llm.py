@@ -9,9 +9,19 @@ load_dotenv()
 APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
 ENABLE_MOCKS = os.getenv("ENABLE_MOCKS", "false").strip().lower() in {"1", "true", "yes", "on"}
 ALLOW_MOCKS = APP_ENV == "local" and ENABLE_MOCKS
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
+
+
+def has_real_gemini_key(api_key: str) -> bool:
+    if not api_key:
+        return False
+    normalized = api_key.strip()
+    if normalized.upper() in {"PASTE_YOUR_KEY_HERE", "YOUR_GEMINI_API_KEY"}:
+        return False
+    return True
 
 # Configure Gemini client — just one API key, that's it
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=GEMINI_API_KEY) if has_real_gemini_key(GEMINI_API_KEY) else None
 MODEL = "gemini-2.5-flash"
 
 
@@ -50,6 +60,9 @@ async def generate_answer_with_context(query: str, context_data: dict, chat_hist
         confidence = 0.85
 
     try:
+        if client is None:
+            raise RuntimeError("GEMINI_API_KEY is missing or placeholder.")
+
         history_str = "\n".join([f"{msg['role']}: {msg['content']}" for msg in chat_history])
         
         system_prompt = f"""You are the PolicyMe Enterprise Claims AI Assistant.
@@ -96,8 +109,8 @@ Use the context if relevant:
     except Exception as e:
         if not ALLOW_MOCKS:
             raise RuntimeError("Gemini generation failed and mock fallbacks are disabled.") from e
-        print(f"Gemini Error, using fallback: {e}")
-        print("Ensure GEMINI_API_KEY is set correctly in .env")
+        if clauses:
+            answer = f"Based on policy context: {clauses[0]['text']}"
         extracted_data["is_mock"] = True
 
     return {
@@ -135,6 +148,9 @@ async def evaluate_underwriting_risk(customer_data: dict) -> dict:
     }
     
     try:
+        if client is None:
+            raise RuntimeError("GEMINI_API_KEY is missing or placeholder.")
+
         prompt_text = RISK_ASSESSMENT_PROMPT.format(customer_data=json.dumps(customer_data))
         
         print(f"Evaluating underwriting risk with Gemini ({MODEL})...")
@@ -159,5 +175,5 @@ async def evaluate_underwriting_risk(customer_data: dict) -> dict:
     except Exception as e:
         if not ALLOW_MOCKS:
             raise RuntimeError("Underwriting evaluation failed and mock fallbacks are disabled.") from e
-        print(f"Error evaluating risk: {e}")
+        print(f"Gemini underwrite unavailable, using mock: {e}")
         return default_response

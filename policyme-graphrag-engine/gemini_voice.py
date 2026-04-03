@@ -10,6 +10,15 @@ APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
 ENABLE_MOCKS = os.getenv("ENABLE_MOCKS", "false").strip().lower() in {"1", "true", "yes", "on"}
 ALLOW_MOCKS = APP_ENV == "local" and ENABLE_MOCKS
 
+
+def has_real_gemini_key(api_key: str) -> bool:
+    if not api_key:
+        return False
+    normalized = api_key.strip()
+    if normalized.upper() in {"PASTE_YOUR_KEY_HERE", "YOUR_GEMINI_API_KEY"}:
+        return False
+    return True
+
 VOICE_RAG_SYSTEM_PROMPT = """
 You are InsurAI, an enterprise-grade insurance policy intelligence engine.
 Analyze the CUSTOMER CLAIM (provided via audio) against the POLICY GRAPH CONTEXT.
@@ -56,15 +65,14 @@ async def process_voice_claim(audio_bytes: bytes, customer_name: str, graph_cont
     Takes raw audio and a Neo4j graph context, and uses Gemini 2.0 Flash 
     to simultaneously transcribe, reason, and translate.
     """
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        if not ALLOW_MOCKS:
-            raise RuntimeError("GEMINI_API_KEY is required when mock fallbacks are disabled.")
-        print("Warning: GEMINI_API_KEY not set. Mocking the voice claim response.")
-        return build_mock_voice_response(target_language)
+    api_key = (os.getenv("GEMINI_API_KEY") or "").strip()
+    if not has_real_gemini_key(api_key):
+        if ALLOW_MOCKS:
+            return build_mock_voice_response(target_language)
+        raise RuntimeError("GEMINI_API_KEY is required when mock fallbacks are disabled.")
 
     try:
-        client = genai.Client()
+        client = genai.Client(api_key=api_key)
         
         # Audio part for Gemini Multimodal
         # Assuming the browser sends audio/webm recorded via MediaRecorder

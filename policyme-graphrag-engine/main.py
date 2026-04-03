@@ -30,6 +30,17 @@ def parse_csv(value: str) -> List[str]:
 APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
 STRICT_STARTUP = parse_bool(os.getenv("STRICT_STARTUP"), default=False)
 ENABLE_MOCKS = parse_bool(os.getenv("ENABLE_MOCKS"), default=False)
+ALLOW_MOCKS = APP_ENV == "local" and ENABLE_MOCKS
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
+
+
+def has_real_gemini_key(api_key: str) -> bool:
+    if not api_key:
+        return False
+    normalized = api_key.strip()
+    if normalized.upper() in {"PASTE_YOUR_KEY_HERE", "YOUR_GEMINI_API_KEY"}:
+        return False
+    return True
 
 default_origins = "http://localhost:3000,http://localhost:3001"
 raw_allowed_origins = os.getenv(
@@ -102,11 +113,16 @@ class QueryResponse(BaseModel):
     extracted_data: Dict[str, Any] = {}
 
 # Initialize Gemini client for embeddings
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+gemini_client = genai.Client(api_key=GEMINI_API_KEY) if has_real_gemini_key(GEMINI_API_KEY) else None
 
 
 async def get_embedding(text: str) -> List[float]:
     """Get embedding vector from Gemini text-embedding-004."""
+    if gemini_client is None:
+        if ALLOW_MOCKS:
+            return []
+        raise RuntimeError("Gemini API key is missing or invalid and mock fallbacks are disabled.")
+
     try:
         response = gemini_client.models.embed_content(
             model="text-embedding-004",
@@ -114,7 +130,7 @@ async def get_embedding(text: str) -> List[float]:
         )
         return response.embeddings[0].values
     except Exception as e:
-        if APP_ENV == "local" and ENABLE_MOCKS:
+        if ALLOW_MOCKS:
             print(f"Gemini Embedding Error (mock mode): {e}")
             return []
         raise RuntimeError("Gemini embedding failed and mock fallbacks are disabled.") from e
@@ -188,6 +204,25 @@ async def handle_underwrite(request: UnderwriteRequest):
 @app.get("/health")
 async def health_check():
     """Health check endpoint to verify Gemini API connectivity."""
+    if gemini_client is None:
+        if ALLOW_MOCKS:
+            return {
+                "status": "healthy",
+                "gemini": "mock mode active (no valid Gemini key)",
+                "app_env": APP_ENV,
+                "strict_startup": STRICT_STARTUP,
+                "mocks_allowed": ALLOW_MOCKS,
+                "allowed_origins": ALLOWED_ORIGINS,
+            }
+        return {
+            "status": "degraded",
+            "gemini": "mock mode active: GEMINI_API_KEY missing or placeholder",
+            "app_env": APP_ENV,
+            "strict_startup": STRICT_STARTUP,
+            "mocks_allowed": ALLOW_MOCKS,
+            "allowed_origins": ALLOWED_ORIGINS,
+        }
+
     try:
         response = gemini_client.models.generate_content(
             model="gemini-2.5-flash",
@@ -201,16 +236,25 @@ async def health_check():
             "response": response.text,
             "app_env": APP_ENV,
             "strict_startup": STRICT_STARTUP,
-            "mocks_allowed": APP_ENV == "local" and ENABLE_MOCKS,
+            "mocks_allowed": ALLOW_MOCKS,
             "allowed_origins": ALLOWED_ORIGINS,
         }
     except Exception as e:
+        if ALLOW_MOCKS:
+            return {
+                "status": "healthy",
+                "gemini": f"fallback to mock mode: {str(e)}",
+                "app_env": APP_ENV,
+                "strict_startup": STRICT_STARTUP,
+                "mocks_allowed": ALLOW_MOCKS,
+                "allowed_origins": ALLOWED_ORIGINS,
+            }
         return {
             "status": "degraded",
             "gemini": f"error: {str(e)}",
             "app_env": APP_ENV,
             "strict_startup": STRICT_STARTUP,
-            "mocks_allowed": APP_ENV == "local" and ENABLE_MOCKS,
+            "mocks_allowed": ALLOW_MOCKS,
             "allowed_origins": ALLOWED_ORIGINS,
         }
 
