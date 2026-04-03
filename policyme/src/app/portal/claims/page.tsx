@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { ClaimRecord } from "@/lib/demo-store";
@@ -37,7 +37,7 @@ function formatDateLabel(value: string): string {
     }).format(date);
 }
 
-export default function ClaimsHistoryPage() {
+function ClaimsHistoryPageContent() {
     const { t } = useLanguage();
     const searchParams = useSearchParams();
     const createdClaimId = searchParams.get("created");
@@ -149,5 +149,21 @@ export default function ClaimsHistoryPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ClaimsHistoryPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="animate-fade-in">
+                    <div className="rounded-2xl bg-[var(--insurai-surface-container-lowest)] p-8 text-sm text-[var(--insurai-on-surface-variant)]">
+                        Loading claims...
+                    </div>
+                </div>
+            }
+        >
+            <ClaimsHistoryPageContent />
+        </Suspense>
     );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { DownloadCloud, FileText, Filter, Loader2 } from "lucide-react";
@@ -39,7 +39,7 @@ function toReportCategory(value: string | null): ManagerReportCategory | null {
     return null;
 }
 
-export default function ReportsPage() {
+function ReportsPageContent() {
     const searchParams = useSearchParams();
     const focus = toReportCategory(searchParams.get("focus"));
     const [reports, setReports] = useState<ManagerReportRecord[]>([]);
@@ -255,5 +255,21 @@ export default function ReportsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ReportsPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex-1 p-6 md:p-10 max-w-5xl w-full">
+                    <div className="rounded-xl border border-border bg-card px-5 py-6 text-sm text-muted-foreground">
+                        Loading reports...
+                    </div>
+                </div>
+            }
+        >
+            <ReportsPageContent />
+        </Suspense>
     );
 }

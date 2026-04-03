@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { AlertTriangle, BookOpen, CheckCircle2 } from "lucide-react";
@@ -17,7 +17,7 @@ type ConflictResponse = {
     error?: string;
 };
 
-export default function ConflictsPage() {
+function ConflictsPageContent() {
     const searchParams = useSearchParams();
     const focusedConflictId = searchParams.get("focus");
     const [conflicts, setConflicts] = useState<ManagerConflictRecord[]>([]);
@@ -220,5 +220,21 @@ export default function ConflictsPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function ConflictsPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="space-y-6">
+                    <div className="rounded-xl border border-border bg-card px-5 py-6 text-sm text-muted-foreground">
+                        Loading conflict data...
+                    </div>
+                </div>
+            }
+        >
+            <ConflictsPageContent />
+        </Suspense>
     );
 }
