@@ -7,52 +7,61 @@ import { resolveRole, getDefaultRedirect } from "@/config/roles";
 
 // ── Build the providers list dynamically ──────────────────────────
 
-const providers: NextAuthOptions["providers"] = [
-    // ─── Google OAuth ───────────────────────────────────────────
-    GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID || "",
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-        profile(profile) {
-            return {
-                id: profile.sub,
-                name: profile.name,
-                email: profile.email,
-                image: profile.picture,
-                role: resolveRole(profile.email),
-            };
-        },
-    }),
+const providers: NextAuthOptions["providers"] = [];
 
-    // ─── GitHub OAuth ───────────────────────────────────────────
-    GitHubProvider({
-        clientId: process.env.GITHUB_CLIENT_ID || "",
-        clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-        profile(profile) {
-            return {
-                id: String(profile.id),
-                name: profile.name || profile.login,
-                email: profile.email,
-                image: profile.avatar_url,
-                role: resolveRole(profile.email),
-            };
-        },
-    }),
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    providers.push(
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            profile(profile) {
+                return {
+                    id: profile.sub,
+                    name: profile.name,
+                    email: profile.email,
+                    image: profile.picture,
+                    role: resolveRole(profile.email),
+                };
+            },
+        })
+    );
+}
 
-    // ─── Azure AD (Enterprise SSO) ──────────────────────────────
-    AzureADProvider({
-        clientId: process.env.AZURE_AD_CLIENT_ID || "",
-        clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "",
-        tenantId: process.env.AZURE_AD_TENANT_ID || "",
-        profile(profile) {
-            return {
-                id: profile.oid,
-                name: profile.name,
-                email: profile.preferred_username,
-                role: resolveRole(profile.preferred_username),
-            };
-        },
-    }),
-];
+if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    providers.push(
+        GitHubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            profile(profile) {
+                return {
+                    id: String(profile.id),
+                    name: profile.name || profile.login,
+                    email: profile.email,
+                    image: profile.avatar_url,
+                    role: resolveRole(profile.email),
+                };
+            },
+        })
+    );
+}
+
+if (process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET && process.env.AZURE_AD_TENANT_ID) {
+    providers.push(
+        AzureADProvider({
+            clientId: process.env.AZURE_AD_CLIENT_ID,
+            clientSecret: process.env.AZURE_AD_CLIENT_SECRET,
+            tenantId: process.env.AZURE_AD_TENANT_ID,
+            profile(profile) {
+                return {
+                    id: profile.oid,
+                    name: profile.name,
+                    email: profile.preferred_username,
+                    role: resolveRole(profile.preferred_username),
+                };
+            },
+        })
+    );
+}
 
 // ─── Demo Credentials Provider (gated behind env var) ───────────
 if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
@@ -84,6 +93,7 @@ if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
 
 export const authOptions: NextAuthOptions = {
     providers,
+    secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
     callbacks: {
         async jwt({ token, user }) {
             // Persist role & image to the JWT right after sign in

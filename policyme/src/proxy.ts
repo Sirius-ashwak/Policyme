@@ -58,7 +58,7 @@ export async function proxy(request: NextRequest) {
     // 3. Check for authentication token
     const token = await getToken({
         req: request,
-        secret: process.env.NEXTAUTH_SECRET,
+        secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
     });
 
     // 4. No token -> redirect to login

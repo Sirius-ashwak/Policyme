@@ -139,7 +139,7 @@ export default function PortalDashboard() {
                         </div>
                         <h3 className="text-lg font-bold mb-3">{t("dash.gap_identified")}</h3>
                         <p className="text-[var(--insurai-on-surface-variant)] text-sm font-[Manrope] mb-6 leading-relaxed">
-                            Based on your local weather patterns in San Francisco, we recommend adding <strong>Flood Coverage</strong> to your Home Policy.
+                            Based on your local monsoon patterns in Bengaluru, we recommend adding <strong>Flood Coverage</strong> to your Home Policy.
                         </p>
                         
                         <div className="p-4 bg-[var(--insurai-surface-container-low)] rounded-xl mb-6 flex justify-between items-center transition-colors">
@@ -172,8 +172,8 @@ export default function PortalDashboard() {
                             </div>
                         </div>
                         <div className="p-6 relative z-10">
-                            <p className="text-sm font-bold text-[var(--insurai-on-surface)] mb-1">Oakwood Avenue Estate</p>
-                            <p className="text-xs font-[Manrope] text-[var(--insurai-on-surface-variant)]">1248 Oakwood Ave, San Francisco, CA</p>
+                            <p className="text-sm font-bold text-[var(--insurai-on-surface)] mb-1">Indiranagar Residence</p>
+                            <p className="text-xs font-[Manrope] text-[var(--insurai-on-surface-variant)]">1248 100 Feet Road, Indiranagar, Bengaluru, Karnataka</p>
                         </div>
                     </div>
                     
