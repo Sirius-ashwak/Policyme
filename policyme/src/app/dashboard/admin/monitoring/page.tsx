@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -8,47 +8,64 @@ export default function SystemMonitoringPage() {
     const router = useRouter();
     const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("24h");
     const [logFilter, setLogFilter] = useState<"SYSTEM" | "GRAPH" | "ERROR">("ERROR");
+    
+    // Dynamic State
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-    const logEntries = [
-        {
-            id: "LOG-1021",
-            timestamp: "2023-11-24 14:02:11",
-            component: "LLM-Cluster-02",
-            event: "Model quantization swap completed successfully.",
-            status: "SUCCESS" as const,
-        },
-        {
-            id: "LOG-1020",
-            timestamp: "2023-11-24 13:58:45",
-            component: "Neo4j-Primary",
-            event: "Memory pressure detected on index \"Policy_Vector\".",
-            status: "WARNING" as const,
-        },
-        {
-            id: "LOG-1019",
-            timestamp: "2023-11-24 13:42:02",
-            component: "API-Gateway-US",
-            event: "High latency detected in US-East region (240ms).",
-            status: "CRITICAL" as const,
-        },
-    ];
-
-    const filteredLogs = logEntries.filter((entry) => {
-        if (logFilter === "GRAPH") {
-            return entry.component.includes("Neo4j");
+    useEffect(() => {
+        async function fetchMonitoring() {
+            try {
+                setLoading(true);
+                const res = await fetch(`/api/admin/monitoring?timeRange=${timeRange}`);
+                if (!res.ok) throw new Error("Failed to fetch monitoring data");
+                const json = await res.json();
+                
+                if (json.error) {
+                    toast.error(json.error);
+                } else {
+                    setData(json);
+                }
+            } catch (err) {
+                console.error(err);
+                toast.error("Could not load telemetry. Using offline fallback.");
+            } finally {
+                setLoading(false);
+            }
         }
+        fetchMonitoring();
+    }, [timeRange]);
 
+    const isMock = !data || (!data.system && !data.graph && !data.logs?.length);
+
+    // Fallbacks
+    const sys = data?.system || {
+        api_latency_ms: 124, latency_trend_pct: -12.0, 
+        token_throughput_k: 842.5, throughput_trend_pct: 4.2,
+        cpu_load_pct: 64, memory_usage_pct: 42, storage_io_pct: 18
+    };
+
+    const graph = data?.graph || {
+        node_count_m: 4.2, relationship_count_m: 18.7,
+        query_speed_ms: 8, cache_hit_ratio_pct: 94
+    };
+
+    const rawLogs = data?.logs || [];
+
+    const filteredLogs = rawLogs.filter((entry: any) => {
+        if (logFilter === "GRAPH") {
+            return entry.category === "GRAPH";
+        }
         if (logFilter === "ERROR") {
             return entry.status === "WARNING" || entry.status === "CRITICAL";
         }
-
-        return true;
+        return true; // SYSTEM shows all (or you could filter by entry.category === "SYSTEM")
     });
 
     const toggleTimeRange = () => {
         setTimeRange((current) => {
             const nextRange = current === "24h" ? "7d" : current === "7d" ? "30d" : "24h";
-            toast.success(`Monitoring range set to ${nextRange.toUpperCase()}.`);
+            toast.success(`Monitoring range set to ${nextRange.toUpperCase()}. fetching logs...`);
             return nextRange;
         });
     };
@@ -63,14 +80,33 @@ export default function SystemMonitoringPage() {
         });
     };
 
+    if (loading && !data) {
+        return (
+            <div className="flex-1 w-full bg-[var(--insurai-surface)] flex items-center justify-center h-full min-h-screen">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+                    <p className="font-['Manrope'] font-bold text-[var(--insurai-on-surface-variant)] animate-pulse">Initializing Telemetry Streams...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex-1 w-full bg-[var(--insurai-surface)] font-['Manrope'] px-6 md:px-10 py-12">
             
             {/* Dashboard Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                 <div>
-                    <h1 className="text-4xl font-extrabold tracking-tight text-[var(--insurai-on-surface)] mb-2 font-['Manrope']">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-[var(--insurai-on-surface)] mb-2 font-['Manrope'] flex items-center gap-3">
                         System Monitoring
+                        {isMock ? (
+                            <span className="text-xs px-2 py-1 bg-red-500/10 text-red-500 rounded-md font-bold font-['Inter']">OFFLINE</span>
+                        ) : (
+                            <span className="text-[10px] px-2 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md font-bold font-['Inter'] flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                LIVE
+                            </span>
+                        )}
                     </h1>
                     <p className="text-[var(--insurai-on-surface-variant)] max-w-2xl leading-relaxed">
                         Global infrastructure health overview and real-time performance metrics for GraphRAG engines and Neo4j database layers.
@@ -85,7 +121,7 @@ export default function SystemMonitoringPage() {
                     </div>
                     <button
                         onClick={toggleTimeRange}
-                        className="bg-[var(--insurai-surface-container-lowest)] shadow-[0_2px_4px_rgba(0,0,0,0.02)] px-4 py-2 rounded-lg border border-[var(--insurai-outline-variant)]/15 flex items-center gap-2"
+                        className="bg-[var(--insurai-surface-container-lowest)] shadow-[0_2px_4px_rgba(0,0,0,0.02)] px-4 py-2 rounded-lg border border-[var(--insurai-outline-variant)]/15 flex items-center gap-2 hover:bg-[var(--insurai-surface-container-low)] transition-colors"
                     >
                         <span className="material-symbols-outlined text-slate-400 text-sm">calendar_today</span>
                         <span className="text-xs font-['Inter'] font-medium uppercase tracking-wider text-[var(--insurai-on-surface)]">
@@ -106,23 +142,23 @@ export default function SystemMonitoringPage() {
                                 API Latency
                             </p>
                             <h3 className="text-4xl font-bold font-['Manrope']">
-                                124<span className="text-lg text-slate-400 font-normal ml-1">ms</span>
+                                {sys.api_latency_ms}<span className="text-lg text-slate-400 font-normal ml-1">ms</span>
                             </h3>
                         </div>
-                        <div className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded text-xs font-bold">
-                            -12%
+                        <div className={`px-2 py-1 rounded text-xs font-bold ${sys.latency_trend_pct < 0 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
+                            {sys.latency_trend_pct > 0 ? '+' : ''}{sys.latency_trend_pct}%
                         </div>
                     </div>
                     <div className="mt-auto h-24 w-full flex items-end gap-1">
-                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-1/2"></div>
-                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-2/3"></div>
-                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-3/4"></div>
-                        <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-t-sm h-1/2"></div>
-                        <div className="flex-1 bg-blue-100 dark:bg-blue-900/40 rounded-t-sm h-2/3"></div>
-                        <div className="flex-1 bg-blue-200 dark:bg-blue-800/60 rounded-t-sm h-4/5"></div>
-                        <div className="flex-1 bg-[var(--primary)] shadow-[0_0_10px_rgba(0,82,209,0.3)] rounded-t-sm h-3/5"></div>
-                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-1/2"></div>
-                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-1/4"></div>
+                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-1/2 cursor-pointer hover:opacity-80 transition-opacity"></div>
+                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-2/3 cursor-pointer hover:opacity-80 transition-opacity"></div>
+                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-3/4 cursor-pointer hover:opacity-80 transition-opacity"></div>
+                        <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-t-sm h-1/2 cursor-pointer hover:opacity-80 transition-opacity"></div>
+                        <div className="flex-1 bg-blue-100 dark:bg-blue-900/40 rounded-t-sm h-2/3 cursor-pointer hover:opacity-80 transition-opacity"></div>
+                        <div className="flex-1 bg-blue-200 dark:bg-blue-800/60 rounded-t-sm h-4/5 cursor-pointer hover:opacity-80 transition-opacity"></div>
+                        <div className="flex-1 bg-[var(--primary)] shadow-[0_0_10px_rgba(0,82,209,0.3)] rounded-t-sm h-3/5 cursor-pointer hover:opacity-80 transition-opacity"></div>
+                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-1/2 cursor-pointer hover:opacity-80 transition-opacity"></div>
+                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-1/4 cursor-pointer hover:opacity-80 transition-opacity"></div>
                     </div>
                 </div>
 
@@ -134,11 +170,11 @@ export default function SystemMonitoringPage() {
                                 Token Throughput
                             </p>
                             <h3 className="text-4xl font-bold font-['Manrope']">
-                                842.5<span className="text-lg text-slate-400 font-normal ml-1">k/hr</span>
+                                {sys.token_throughput_k}<span className="text-lg text-slate-400 font-normal ml-1">k/hr</span>
                             </h3>
                         </div>
-                        <div className="bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-xs font-bold">
-                            +4.2%
+                        <div className={`px-2 py-1 rounded text-xs font-bold ${sys.throughput_trend_pct > 0 ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-slate-50 text-slate-600'}`}>
+                            {sys.throughput_trend_pct > 0 ? '+' : ''}{sys.throughput_trend_pct}%
                         </div>
                     </div>
                     <div className="mt-auto relative">
@@ -161,30 +197,30 @@ export default function SystemMonitoringPage() {
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-xs font-['Inter'] font-bold text-[var(--insurai-on-surface-variant)] tracking-wider uppercase">CPU Load</span>
-                                <span className="text-xs font-bold text-[var(--insurai-on-surface)]">64%</span>
+                                <span className="text-xs font-bold text-[var(--insurai-on-surface)]">{sys.cpu_load_pct}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-[var(--insurai-surface-container-highest)] rounded-full overflow-hidden">
-                                <div className="h-full bg-[var(--primary)] rounded-full" style={{ width: "64%" }}></div>
+                                <div className={`h-full rounded-full transition-all duration-1000 ${sys.cpu_load_pct > 80 ? 'bg-red-500' : 'bg-[var(--primary)]'}`} style={{ width: `${sys.cpu_load_pct}%` }}></div>
                             </div>
                         </div>
                         
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-xs font-['Inter'] font-bold text-[var(--insurai-on-surface-variant)] tracking-wider uppercase">Memory Usage</span>
-                                <span className="text-xs font-bold text-[var(--insurai-on-surface)]">42%</span>
+                                <span className="text-xs font-bold text-[var(--insurai-on-surface)]">{sys.memory_usage_pct}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-[var(--insurai-surface-container-highest)] rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-400 rounded-full" style={{ width: "42%" }}></div>
+                                <div className="h-full bg-blue-400 rounded-full transition-all duration-1000" style={{ width: `${sys.memory_usage_pct}%` }}></div>
                             </div>
                         </div>
                         
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-xs font-['Inter'] font-bold text-[var(--insurai-on-surface-variant)] tracking-wider uppercase">Storage I/O</span>
-                                <span className="text-xs font-bold text-[var(--insurai-on-surface)]">18%</span>
+                                <span className="text-xs font-bold text-[var(--insurai-on-surface)]">{sys.storage_io_pct}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-[var(--insurai-surface-container-highest)] rounded-full overflow-hidden">
-                                <div className="h-full bg-slate-400 dark:bg-slate-600 rounded-full" style={{ width: "18%" }}></div>
+                                <div className="h-full bg-slate-400 dark:bg-slate-600 rounded-full transition-all duration-1000" style={{ width: `${sys.storage_io_pct}%` }}></div>
                             </div>
                         </div>
                     </div>
@@ -279,7 +315,7 @@ export default function SystemMonitoringPage() {
                                     <span className="material-symbols-outlined text-[var(--insurai-secondary)] text-[18px]">schema</span>
                                     <span className="text-sm font-semibold">Node Count</span>
                                 </div>
-                                <span className="font-bold text-[var(--primary)]">4.2M</span>
+                                <span className="font-bold text-[var(--primary)]">{graph.node_count_m}M</span>
                             </div>
                             
                             <div className="flex items-center justify-between p-3 bg-[var(--insurai-surface-container-low)] rounded-lg hover:bg-[var(--insurai-surface-container)] transition-colors">
@@ -287,7 +323,7 @@ export default function SystemMonitoringPage() {
                                     <span className="material-symbols-outlined text-[var(--insurai-secondary)] text-[18px]">link</span>
                                     <span className="text-sm font-semibold">Relationships</span>
                                 </div>
-                                <span className="font-bold text-[var(--primary)]">18.7M</span>
+                                <span className="font-bold text-[var(--primary)]">{graph.relationship_count_m}M</span>
                             </div>
                             
                             <div className="flex items-center justify-between p-3 bg-[var(--insurai-surface-container-low)] rounded-lg hover:bg-[var(--insurai-surface-container)] transition-colors">
@@ -295,7 +331,7 @@ export default function SystemMonitoringPage() {
                                     <span className="material-symbols-outlined text-[var(--insurai-secondary)] text-[18px]">timer</span>
                                     <span className="text-sm font-semibold">Query Speed</span>
                                 </div>
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400">8ms</span>
+                                <span className="font-bold text-emerald-600 dark:text-emerald-400">{graph.query_speed_ms}ms</span>
                             </div>
                         </div>
 
@@ -306,18 +342,18 @@ export default function SystemMonitoringPage() {
                             <div className="relative pt-1">
                                 <div className="flex mb-2 items-center justify-between">
                                     <div>
-                                        <span className="text-[10px] font-bold inline-block py-1 px-2 uppercase rounded-md text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                            Optimal
+                                        <span className={`text-[10px] font-bold inline-block py-1 px-2 uppercase rounded-md ${graph.cache_hit_ratio_pct > 90 ? 'text-emerald-700 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300' : 'text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300'}`}>
+                                            {graph.cache_hit_ratio_pct > 90 ? 'Optimal' : 'Degraded'}
                                         </span>
                                     </div>
                                     <div className="text-right">
                                         <span className="text-sm font-bold inline-block text-[var(--primary)]">
-                                            94%
+                                            {graph.cache_hit_ratio_pct}%
                                         </span>
                                     </div>
                                 </div>
                                 <div className="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-[var(--insurai-surface-container-high)]">
-                                    <div className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[var(--primary)] transition-all duration-1000" style={{ width: "94%" }}></div>
+                                    <div className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-1000 ${graph.cache_hit_ratio_pct > 90 ? 'bg-[var(--primary)]' : 'bg-amber-500'}`} style={{ width: `${graph.cache_hit_ratio_pct}%` }}></div>
                                 </div>
                             </div>
                         </div>
@@ -364,16 +400,18 @@ export default function SystemMonitoringPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--insurai-outline-variant)]/10">
-                                {filteredLogs.map((entry) => (
+                                {filteredLogs.map((entry: any) => (
                                     <tr
-                                        key={entry.id}
+                                        key={entry.log_id}
                                         className={`transition-colors group ${
                                             entry.status === "CRITICAL"
                                                 ? "hover:bg-red-50/50 dark:hover:bg-red-900/20 relative border-l-2 border-l-red-500"
                                                 : "hover:bg-[var(--insurai-surface-container-low)]/50"
                                         }`}
                                     >
-                                        <td className="px-6 py-4 text-xs font-['Inter'] font-semibold text-[var(--insurai-on-surface-variant)]">{entry.timestamp}</td>
+                                        <td className="px-6 py-4 text-xs font-['Inter'] font-semibold text-[var(--insurai-on-surface-variant)]">
+                                            {new Date(entry.logged_at).toLocaleString('en-US', { hour12: false, month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit'})}
+                                        </td>
                                         <td className="px-6 py-4 text-xs font-bold text-[var(--insurai-on-surface)]">{entry.component}</td>
                                         <td className="px-6 py-4 text-xs font-['Inter'] text-[var(--insurai-on-surface-variant)]">{entry.event}</td>
                                         <td className="px-6 py-4">
@@ -400,7 +438,7 @@ export default function SystemMonitoringPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <button
-                                                onClick={() => openLogDetails(entry.id)}
+                                                onClick={() => openLogDetails(entry.log_id)}
                                                 className="text-[var(--primary)] opacity-0 group-hover:opacity-100 transition-opacity bg-[var(--primary)]/10 p-1.5 rounded-md hover:bg-[var(--primary)]/20"
                                             >
                                                 <span className="material-symbols-outlined text-[18px]">read_more</span>
@@ -411,7 +449,7 @@ export default function SystemMonitoringPage() {
                                 {filteredLogs.length === 0 && (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-8 text-center text-sm text-[var(--insurai-on-surface-variant)]">
-                                            No logs found for the selected filter.
+                                            No logs found for the selected filter and time range.
                                         </td>
                                     </tr>
                                 )}

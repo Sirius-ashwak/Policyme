@@ -1,20 +1,96 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 export default function AIAnalyticsPage() {
     const [timeframe, setTimeframe] = useState<"24H" | "7D" | "30D" | "Custom">("24H");
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchAnalytics() {
+            try {
+                const res = await fetch(`/api/admin/analytics?timeframe=${timeframe}`);
+                if (!res.ok) throw new Error("Failed to fetch");
+                const json = await res.json();
+                
+                if (json.error) {
+                    toast.error(json.error);
+                } else {
+                    setData(json);
+                }
+            } catch (err) {
+                console.error(err);
+                toast.error("Could not load analytics. Using mock fallback.");
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchAnalytics();
+    }, [timeframe]);
+
+    // Fallbacks while loading or if data is missing
+    const isMock = !data || !data.metrics;
     
+    // Primary metrics (grab the latest from the array)
+    const metrics = data?.metrics?.length > 0 
+        ? data.metrics[data.metrics.length - 1] 
+        : { avg_match_confidence: 0, hitl_rate: 0, retrieval_speed_ms: 0 };
+        
+    // Generate dynamic SVG path from data
+    let svgPath = "M0,80 Q50,90 100,50 T300,70 T500,30 T700,40 T800,20 L800,120 L0,120 Z";
+    let svgLine = "M0,80 Q50,90 100,50 T300,70 T500,30 T700,40 T800,20";
+    let svgPoints = [
+        { x: 100, y: 50 }, { x: 300, y: 70 }, { x: 500, y: 30 }, { x: 700, y: 40 }, { x: 800, y: 20 }
+    ];
+
+    if (data?.metrics && data.metrics.length > 1) {
+        // Map available metrics to chart coordinates (dummy distribution across X axis)
+        const count = data.metrics.length;
+        const pts = data.metrics.map((m: any, idx: number) => {
+            const x = (800 / (count - 1)) * idx;
+            // Y inverted: 100% = y:10, 0% = y:110
+            const y = 110 - (m.avg_match_confidence);
+            return { x, y };
+        });
+        
+        svgLine = `M0,${pts[0].y} ` + pts.map((p: any) => `L${p.x},${p.y}`).join(" ");
+        svgPath = svgLine + ` L800,120 L0,120 Z`;
+        svgPoints = pts;
+    }
+
+    const hallucinationRisks = data?.risks || [];
+    const training = data?.trainingStatus || { model_name: "Loading...", current_epoch: 0, total_epochs: 100, loss: 0, progress_percent: 0 };
+
+    if (loading) {
+        return (
+            <div className="flex-1 w-full bg-[var(--insurai-surface)] flex items-center justify-center h-full min-h-screen">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+                    <p className="font-['Manrope'] font-bold text-[var(--insurai-on-surface-variant)] animate-pulse">Establishing Secure Database Context...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex-1 w-full bg-[var(--insurai-surface)] font-['Manrope'] px-6 md:px-10 py-12">
             
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
                 <div className="space-y-2">
-                    <h1 className="text-4xl font-extrabold tracking-tight text-[var(--insurai-on-surface)]">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-[var(--insurai-on-surface)] flex items-center gap-3">
                         AI Performance Analytics
+                        {isMock ? (
+                            <span className="text-xs px-2 py-1 bg-red-500/10 text-red-500 rounded-md font-bold font-['Inter']">OFFLINE</span>
+                        ) : (
+                            <span className="text-[10px] px-2 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md font-bold font-['Inter'] flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                LIVE
+                            </span>
+                        )}
                     </h1>
                     <p className="text-[var(--insurai-on-surface-variant)] leading-relaxed max-w-xl">
                         Monitor large language model precision, hallucination risks, and human-in-the-loop intervention metrics across the claim adjudication engine.
@@ -53,17 +129,17 @@ export default function AIAnalyticsPage() {
                     <div className="relative z-10 flex flex-col h-full justify-between">
                         <div className="flex justify-between items-start">
                             <div>
-                                <p className="textxs font-['Inter'] font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-widest mb-1 items-center flex gap-2">
+                                <p className="text-xs font-['Inter'] font-bold text-[var(--insurai-on-surface-variant)] uppercase tracking-widest mb-1 items-center flex gap-2">
                                     <span className="material-symbols-outlined text-[var(--primary)] text-[16px]">target</span>
                                     Average Match Confidence
                                 </p>
                                 <div className="flex items-baseline gap-3">
                                     <h2 className="text-5xl font-black tracking-tight font-['Manrope'] text-[var(--insurai-on-surface)]">
-                                        94.2<span className="text-2xl text-[var(--insurai-on-surface-variant)] font-semibold">%</span>
+                                        {metrics.avg_match_confidence}<span className="text-2xl text-[var(--insurai-on-surface-variant)] font-semibold">%</span>
                                     </h2>
                                     <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 px-2 py-0.5 rounded-md font-['Inter']">
                                         <span className="material-symbols-outlined text-[14px]">trending_up</span>
-                                        +1.4%
+                                        Real-Time
                                     </span>
                                 </div>
                             </div>
@@ -78,14 +154,14 @@ export default function AIAnalyticsPage() {
 
                         {/* Chart Area */}
                         <div className="mt-12 h-32 w-full relative">
-                            {/* Decorative GridLines */}
+                           {/* Decorative GridLines */}
                             <div className="absolute inset-0 flex flex-col justify-between pt-2 pointer-events-none">
                                 <div className="border-t border-[var(--insurai-outline-variant)]/5 w-full"></div>
                                 <div className="border-t border-[var(--insurai-outline-variant)]/5 w-full"></div>
                                 <div className="border-t border-[var(--insurai-surface-container-highest)] w-full"></div>
                             </div>
                             
-                            {/* SVG Line Graph */}
+                            {/* SVG Line Graph (Dynamic) */}
                             <svg className="w-full h-full relative z-10 overflow-visible" viewBox="0 0 800 120" preserveAspectRatio="none">
                                 <defs>
                                     <linearGradient id="gradient-confidence" x1="0%" x2="0%" y1="0%" y2="100%">
@@ -93,14 +169,12 @@ export default function AIAnalyticsPage() {
                                         <stop offset="100%" stopColor="var(--primary)" stopOpacity="0"></stop>
                                     </linearGradient>
                                 </defs>
-                                <path d="M0,80 Q50,90 100,50 T300,70 T500,30 T700,40 T800,20 L800,120 L0,120 Z" fill="url(#gradient-confidence)" className="transition-all duration-1000 ease-in-out"></path>
-                                <path d="M0,80 Q50,90 100,50 T300,70 T500,30 T700,40 T800,20" fill="none" stroke="var(--primary)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_4px_12px_rgba(0,82,209,0.5)]"></path>
+                                <path d={svgPath} fill="url(#gradient-confidence)" className="transition-all duration-1000 ease-in-out"></path>
+                                <path d={svgLine} fill="none" stroke="var(--primary)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_4px_12px_rgba(0,82,209,0.5)]"></path>
                                 {/* Data Points */}
-                                <circle cx="100" cy="50" r="5" fill="var(--insurai-surface)" stroke="var(--primary)" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer shadow-lg"></circle>
-                                <circle cx="300" cy="70" r="5" fill="var(--insurai-surface)" stroke="var(--primary)" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer shadow-lg"></circle>
-                                <circle cx="500" cy="30" r="5" fill="var(--insurai-surface)" stroke="var(--primary)" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer shadow-lg"></circle>
-                                <circle cx="700" cy="40" r="5" fill="var(--insurai-surface)" stroke="var(--primary)" strokeWidth="3" className="hover:r-7 transition-all cursor-pointer shadow-lg"></circle>
-                                <circle cx="800" cy="20" r="5" fill="white" stroke="var(--primary)" strokeWidth="4" className="shadow-[0_0_15px_rgba(0,82,209,0.8)]"></circle>
+                                {svgPoints.map((pt, i) => (
+                                     <circle key={i} cx={pt.x} cy={pt.y} r="5" fill={i === svgPoints.length - 1 ? "white" : "var(--insurai-surface)"} stroke="var(--primary)" strokeWidth={i === svgPoints.length - 1 ? "4" : "3"} className="hover:r-7 transition-all cursor-pointer shadow-lg"></circle>
+                                ))}
                             </svg>
                         </div>
                     </div>
@@ -119,11 +193,11 @@ export default function AIAnalyticsPage() {
                         </div>
                         <div className="flex items-baseline gap-2">
                             <h3 className="text-4xl font-black font-['Manrope'] text-[var(--insurai-on-surface)]">
-                                12.8<span className="text-xl text-[var(--insurai-on-surface-variant)] font-semibold">%</span>
+                                {metrics.hitl_rate}<span className="text-xl text-[var(--insurai-on-surface-variant)] font-semibold">%</span>
                             </h3>
                         </div>
                         <p className="text-[11px] text-[var(--insurai-on-surface-variant)] font-['Inter'] mt-2">
-                            Of all AI adjudications required an underwriter override this week.
+                            Of all AI adjudications required an underwriter override.
                         </p>
                     </div>
 
@@ -137,15 +211,15 @@ export default function AIAnalyticsPage() {
                         </div>
                         <div className="flex items-baseline gap-2">
                             <h3 className="text-4xl font-black font-['Manrope'] text-[var(--insurai-on-surface)]">
-                                240<span className="text-xl text-[var(--insurai-on-surface-variant)] font-semibold">ms</span>
+                                {metrics.retrieval_speed_ms}<span className="text-xl text-[var(--insurai-on-surface-variant)] font-semibold">ms</span>
                             </h3>
                             <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 px-2 py-0.5 rounded font-['Inter']">
                                 <span className="material-symbols-outlined text-[12px]">trending_down</span>
-                                -14ms
+                                Current Average
                             </span>
                         </div>
                         <div className="mt-3 w-full h-1.5 bg-[var(--insurai-surface-container-high)] rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500 rounded-full w-[85%]"></div>
+                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: Math.min((300 / (metrics.retrieval_speed_ms || 300)) * 100, 100) + '%' }}></div>
                         </div>
                     </div>
                 </div>
@@ -177,55 +251,40 @@ export default function AIAnalyticsPage() {
                             </thead>
                             <tbody className="divide-y divide-[var(--insurai-surface-container-highest)]/30">
                                 
-                                <tr className="hover:bg-[var(--insurai-surface-container-low)]/50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <p className="text-sm font-semibold text-[var(--insurai-on-surface)]">"Water damage limits on policy HX-819"</p>
-                                        <p className="text-[10px] text-[var(--insurai-on-surface-variant)] mt-1 font-['Inter'] font-medium">Doc: Homeowner_Comprehensive_v2.pdf</p>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-xs font-semibold px-2.5 py-1 rounded bg-[var(--insurai-surface-container-highest)] border border-[var(--insurai-outline-variant)]/20 text-[var(--insurai-on-surface-variant)]">
-                                            Gemini-Pro-2.0
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-16 h-1.5 rounded-full bg-[var(--insurai-surface-container-high)] overflow-hidden">
-                                                <div className="w-[42%] h-full bg-red-500 rounded-full"></div>
-                                            </div>
-                                            <span className="text-xs font-bold text-red-600 dark:text-red-400">42%</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button onClick={() => toast.success("Override Logged", { description: "HITL workflow initiated for this query."})} className="px-4 py-1.5 rounded-lg text-[10px] font-bold text-slate-700 dark:text-slate-200 border border-[var(--insurai-outline-variant)]/20 hover:bg-[var(--insurai-surface-container)] transition-colors uppercase tracking-wider shadow-sm">
-                                            FLAGGED HITL
-                                        </button>
-                                    </td>
-                                </tr>
-
-                                <tr className="hover:bg-[var(--insurai-surface-container-low)]/50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <p className="text-sm font-semibold text-[var(--insurai-on-surface)]">"Does commercial auto cover employee negligence?"</p>
-                                        <p className="text-[10px] text-[var(--insurai-on-surface-variant)] mt-1 font-['Inter'] font-medium">Doc: Commercial_Auto_Rideshare_Rider.pdf</p>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-xs font-semibold px-2.5 py-1 rounded bg-[var(--insurai-surface-container-highest)] border border-[var(--insurai-outline-variant)]/20 text-[var(--insurai-on-surface-variant)]">
-                                            Claude-3-Sonnet
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-16 h-1.5 rounded-full bg-[var(--insurai-surface-container-high)] overflow-hidden">
-                                                <div className="w-[68%] h-full bg-amber-500 rounded-full"></div>
-                                            </div>
-                                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">68%</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button onClick={() => toast.success("Re-queued", { description: "Query sent to RAG pipeline for retrieval again."})} className="px-4 py-1.5 rounded-lg text-[10px] font-bold text-[var(--primary)] bg-[var(--primary)]/10 border border-[var(--primary)]/20 hover:bg-[var(--primary)]/20 transition-colors uppercase tracking-wider shadow-sm">
-                                            RAG RETRIED
-                                        </button>
-                                    </td>
-                                </tr>
+                                {hallucinationRisks.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-8 text-center text-sm font-semibold text-[var(--insurai-on-surface-variant)]">
+                                            No recent hallucination logs detected.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    hallucinationRisks.map((risk: any, i: number) => (
+                                        <tr key={i} className="hover:bg-[var(--insurai-surface-container-low)]/50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <p className="text-sm font-semibold text-[var(--insurai-on-surface)]">"{risk.query_signature}"</p>
+                                                <p className="text-[10px] text-[var(--insurai-on-surface-variant)] mt-1 font-['Inter'] font-medium">Doc: {risk.document_reference}</p>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-xs font-semibold px-2.5 py-1 rounded bg-[var(--insurai-surface-container-highest)] border border-[var(--insurai-outline-variant)]/20 text-[var(--insurai-on-surface-variant)]">
+                                                    {risk.model_version}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-16 h-1.5 rounded-full bg-[var(--insurai-surface-container-high)] overflow-hidden">
+                                                        <div className={`h-full rounded-full ${risk.confidence_score > 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${risk.confidence_score}%` }}></div>
+                                                    </div>
+                                                    <span className={`text-xs font-bold ${risk.confidence_score > 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>{parseInt(risk.confidence_score)}%</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button onClick={() => toast.success("Action logged", { description: "Audit trail populated."})} className="px-4 py-1.5 rounded-lg text-[10px] font-bold text-[var(--primary)] bg-[var(--primary)]/10 border border-[var(--primary)]/20 hover:bg-[var(--primary)]/20 transition-colors uppercase tracking-wider shadow-sm">
+                                                    {risk.action_taken}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
 
                             </tbody>
                         </table>
@@ -247,13 +306,13 @@ export default function AIAnalyticsPage() {
                         <div className="bg-[var(--insurai-surface-container-low)] rounded-xl p-4 border border-[var(--insurai-outline-variant)]/10">
                             <div className="flex justify-between items-end mb-2">
                                 <div>
-                                    <p className="text-xs font-bold text-[var(--insurai-on-surface)]">Policy_Embedding_v4</p>
-                                    <p className="text-[10px] font-['Inter'] text-[var(--insurai-on-surface-variant)] mt-0.5">Epoch 42/100 • Loss: 0.124</p>
+                                    <p className="text-xs font-bold text-[var(--insurai-on-surface)]">{training.model_name}</p>
+                                    <p className="text-[10px] font-['Inter'] text-[var(--insurai-on-surface-variant)] mt-0.5">Epoch {training.current_epoch}/{training.total_epochs} • Loss: {training.loss}</p>
                                 </div>
-                                <span className="text-sm font-black text-[var(--primary)]">42%</span>
+                                <span className="text-sm font-black text-[var(--primary)]">{training.progress_percent}%</span>
                             </div>
                             <div className="w-full h-2 bg-[var(--insurai-surface-container-highest)] rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-500 w-[42%] relative overflow-hidden">
+                                <div className="h-full bg-blue-500 relative overflow-hidden" style={{ width: `${training.progress_percent}%` }}>
                                     <div className="absolute inset-0 bg-white/20 -skew-x-12 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
                                 </div>
                             </div>
@@ -262,12 +321,12 @@ export default function AIAnalyticsPage() {
 
                     <div className="mt-8">
                         <p className="text-xs font-['Inter'] text-[var(--insurai-on-surface-variant)] leading-relaxed mb-4">
-                            The embedding matrix is being updated utilizing the resolved 640 HITL overrides from the past 14 days, improving semantic correlation for edge-case liability clauses.
+                            The embedding matrix is being updated utilizing the real HITL overrides from the past 14 days, improving semantic correlation for edge-case liability clauses.
                         </p>
                         <button 
                             onClick={() => toast.promise(new Promise(r => setTimeout(r, 2000)), {
                                 loading: "Downloading training logs...",
-                                success: "Training_Logs_Epoch42.csv downloaded",
+                                success: `Training_Logs_Epoch${training.current_epoch}.csv downloaded`,
                                 error: "Download failed"
                             })}
                             className="w-full py-3 rounded-xl bg-[var(--insurai-on-surface)] text-[var(--insurai-surface)] text-sm font-bold shadow-lg hover:shadow-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-all font-['Manrope']"
