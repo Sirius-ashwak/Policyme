@@ -38,7 +38,7 @@ function getRequiredRoles(pathname: string): string[] | null {
     return null;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // 1. Allow public routes through
@@ -61,7 +61,7 @@ export async function middleware(request: NextRequest) {
         secret: process.env.NEXTAUTH_SECRET,
     });
 
-    // 4. No token → redirect to login
+    // 4. No token -> redirect to login
     if (!token) {
         const loginUrl = new URL("/login", request.url);
         loginUrl.searchParams.set("callbackUrl", pathname);
@@ -80,7 +80,7 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    // 6. Authenticated + authorized → allow through
+    // 6. Authenticated + authorized -> allow through
     return NextResponse.next();
 }
 
