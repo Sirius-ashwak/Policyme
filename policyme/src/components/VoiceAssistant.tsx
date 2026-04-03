@@ -54,7 +54,7 @@ declare global {
 }
 
 const languages: LanguageOption[] = [
-    { code: "en", locale: "en-US", name: "English", flag: "🇺🇸" },
+    { code: "en", locale: "en-IN", name: "English", flag: "🇮🇳" },
     { code: "es", locale: "es-ES", name: "Español", flag: "🇪🇸" },
     { code: "fr", locale: "fr-FR", name: "Français", flag: "🇫🇷" },
     { code: "de", locale: "de-DE", name: "Deutsch", flag: "🇩🇪" },

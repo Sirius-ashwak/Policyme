@@ -18,7 +18,7 @@ const LANGUAGES = [
   { name: "Tamil", code: "ta-IN" },
   { name: "Hindi", code: "hi-IN" },
   { name: "Telugu", code: "te-IN" },
-  { name: "English", code: "en-US" },
+  { name: "English", code: "en-IN" },
 ];
 
 export function VoiceClaimButton() {
