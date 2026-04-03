@@ -1,11 +1,14 @@
 package com.policyme.ingestion.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.policyme.ingestion.model.DocumentEvent;
 import com.policyme.ingestion.service.KafkaProducerService;
 import com.policyme.ingestion.service.S3Service;
 import com.policyme.ingestion.service.TextExtractionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,13 +34,22 @@ public class DocumentUploadController {
     private final S3Service s3Service;
     private final KafkaProducerService kafkaProducerService;
     private final TextExtractionService textExtractionService;
+    private final ObjectMapper objectMapper;
+    private final int kafkaMaxRequestSizeBytes;
+    private final int kafkaEventSafetyBufferBytes;
 
     public DocumentUploadController(S3Service s3Service,
                                     KafkaProducerService kafkaProducerService,
-                                    TextExtractionService textExtractionService) {
+                                    TextExtractionService textExtractionService,
+                                    ObjectMapper objectMapper,
+                                    @Value("${spring.kafka.producer.properties.max.request.size:10485760}") int kafkaMaxRequestSizeBytes,
+                                    @Value("${policyme.kafka.event-safety-buffer-bytes:8192}") int kafkaEventSafetyBufferBytes) {
         this.s3Service = s3Service;
         this.kafkaProducerService = kafkaProducerService;
         this.textExtractionService = textExtractionService;
+        this.objectMapper = objectMapper;
+        this.kafkaMaxRequestSizeBytes = kafkaMaxRequestSizeBytes;
+        this.kafkaEventSafetyBufferBytes = kafkaEventSafetyBufferBytes;
     }
 
     /**
@@ -79,12 +91,10 @@ public class DocumentUploadController {
             // 2. Upload to S3
             String s3Key = s3Service.uploadFile(file);
 
-            // 3. Extract text
+            // 3. Extract full text (no truncation in production path)
             String extractedText = textExtractionService.extractTextFromPdf(file);
-            // Truncate for Kafka payload (full text stored in S3)
-            String textPreview = extractedText.length() > 5000 
-                    ? extractedText.substring(0, 5000) + "...[TRUNCATED]" 
-                    : extractedText;
+            log.info("Extracted full policy text for '{}': {} characters",
+                    file.getOriginalFilename(), extractedText.length());
 
             // 4. Build and publish Kafka event
             DocumentEvent event = new DocumentEvent(
@@ -96,7 +106,25 @@ public class DocumentUploadController {
                     s3Service.getBucketName(),
                     uploadedBy
             );
-            event.setExtractedText(textPreview);
+            event.setExtractedText(extractedText);
+
+            int payloadBytes = estimateEventPayloadBytes(event);
+            int safePayloadLimit = Math.max(1, kafkaMaxRequestSizeBytes - kafkaEventSafetyBufferBytes);
+            if (payloadBytes > safePayloadLimit) {
+                log.warn(
+                        "Rejected {} because event payload {} bytes exceeds safe Kafka limit {} bytes",
+                        documentId,
+                        payloadBytes,
+                        safePayloadLimit
+                );
+                return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(Map.of(
+                        "error", "Kafka payload too large",
+                        "message", "Extracted document text exceeds Kafka producer payload limits. Split the document or reduce extracted text size.",
+                        "documentId", documentId,
+                        "payloadBytes", payloadBytes,
+                        "maxAllowedBytes", safePayloadLimit
+                ));
+            }
 
             kafkaProducerService.publishDocumentEvent(event);
 
@@ -112,12 +140,20 @@ public class DocumentUploadController {
                     "timestamp", Instant.now().toString()
             ));
 
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
             log.error(" Failed to process document upload: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "error", "Upload failed",
                     "message", e.getMessage()
             ));
+        }
+    }
+
+    private int estimateEventPayloadBytes(DocumentEvent event) {
+        try {
+            return objectMapper.writeValueAsBytes(event).length;
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Unable to estimate Kafka event payload size", e);
         }
     }
 

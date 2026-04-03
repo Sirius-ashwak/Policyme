@@ -15,6 +15,8 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
+        max.request.size: ${KAFKA_PRODUCER_MAX_REQUEST_SIZE:10485760}
+        compression.type: ${KAFKA_PRODUCER_COMPRESSION:gzip}
         spring.json.add.type.headers: false
 
 # AWS S3 Configuration
@@ -33,5 +35,6 @@ policyme:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001,https://policyme.vercel.app}
     allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
   kafka:
+    event-safety-buffer-bytes: ${KAFKA_EVENT_SAFETY_BUFFER_BYTES:8192}
     topic:
       document-uploaded: policyme.document.uploaded
