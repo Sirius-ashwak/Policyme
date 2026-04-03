@@ -6,6 +6,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 /** Inline SVG icons */
 function GoogleIcon() {
     return (
@@ -37,9 +39,18 @@ function MicrosoftIcon() {
     );
 }
 
+const DEMO_ROLES = [
+    { role: "Customer",    color: "bg-emerald-500", redirect: "/portal",                        label: "Customer" },
+    { role: "Adjuster",    color: "bg-blue-500",    redirect: "/dashboard/adjuster",             label: "Adjuster" },
+    { role: "Underwriter", color: "bg-violet-500",  redirect: "/dashboard/underwriter/metrics",  label: "Underwriter" },
+    { role: "Manager",     color: "bg-amber-500",   redirect: "/dashboard/manager",              label: "Manager" },
+    { role: "Admin",       color: "bg-rose-500",    redirect: "/dashboard/admin",                label: "Admin" },
+];
+
 export default function SignUpPageContent() {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get("callbackUrl") || "/portal";
+    const [demoOpen, setDemoOpen] = useState(false);
     const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
     const handleOAuthSignIn = (provider: string) => {
@@ -123,6 +134,48 @@ export default function SignUpPageContent() {
                         )}
                         Continue with Enterprise SSO
                     </button>
+
+                    {/* Demo Mode */}
+                    {DEMO_MODE && (
+                        <div className="mt-5">
+                            <button
+                                onClick={() => setDemoOpen(!demoOpen)}
+                                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30 text-[13px] font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">science</span>
+                                    Demo Mode
+                                </span>
+                                <span
+                                    className="material-symbols-outlined text-sm transition-transform duration-200"
+                                    style={{ transform: demoOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                                >
+                                    expand_more
+                                </span>
+                            </button>
+
+                            <div
+                                className="overflow-hidden transition-all duration-300 ease-out"
+                                style={{
+                                    maxHeight: demoOpen ? "280px" : "0px",
+                                    opacity: demoOpen ? 1 : 0,
+                                }}
+                            >
+                                <div className="pt-3 grid grid-cols-2 gap-2">
+                                    {DEMO_ROLES.map((demo) => (
+                                        <button
+                                            key={demo.role}
+                                            onClick={() => signIn("credentials", { role: demo.role, callbackUrl: demo.redirect })}
+                                            className="relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/[0.06] dark:border-white/[0.08] text-[13px] font-medium text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-[#f5f5f5] dark:hover:bg-[#3a3a3c] active:scale-[0.97] transition-all duration-150"
+                                        >
+                                            <div className={`w-2 h-2 rounded-full ${demo.color}`} />
+                                            {demo.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Sign In Link */}
