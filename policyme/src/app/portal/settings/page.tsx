@@ -16,7 +16,7 @@ function formatDateTime(value: string): string {
         return value;
     }
 
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat("en-IN", {
         month: "short",
         day: "numeric",
         year: "numeric",

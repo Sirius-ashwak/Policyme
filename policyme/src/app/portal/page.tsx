@@ -48,7 +48,7 @@ export default function PortalDashboard() {
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-[var(--insurai-on-surface-variant)]">{t("dash.total_coverage")}</span>
-                                    <span className="font-bold">$100,000</span>
+                                    <span className="font-bold">₹100,000</span>
                                 </div>
                                 <div className="w-full bg-[var(--insurai-surface-container-high)] h-1.5 rounded-full overflow-hidden">
                                     <div className="bg-[var(--primary)] h-full w-3/4 rounded-full transition-all duration-1000" />
@@ -144,7 +144,7 @@ export default function PortalDashboard() {
                         
                         <div className="p-4 bg-[var(--insurai-surface-container-low)] rounded-xl mb-6 flex justify-between items-center transition-colors">
                             <span className="text-xs font-[Inter] font-medium text-[var(--insurai-on-surface-variant)]">{t("dash.estimated_addon")}</span>
-                            <span className="font-bold text-[var(--primary)]">+$12.40/mo</span>
+                            <span className="font-bold text-[var(--primary)]">+₹12.40/mo</span>
                         </div>
                         
                         <button className="w-full py-3 bg-[var(--insurai-surface-container-high)] hover:bg-[var(--insurai-surface-container-highest)] text-[var(--insurai-on-surface)] font-bold rounded-xl transition-colors">

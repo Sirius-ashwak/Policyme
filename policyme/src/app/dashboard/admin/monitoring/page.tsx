@@ -410,7 +410,7 @@ export default function SystemMonitoringPage() {
                                         }`}
                                     >
                                         <td className="px-6 py-4 text-xs font-['Inter'] font-semibold text-[var(--insurai-on-surface-variant)]">
-                                            {new Date(entry.logged_at).toLocaleString('en-US', { hour12: false, month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit'})}
+                                            {new Date(entry.logged_at).toLocaleString('en-IN', { hour12: false, month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit'})}
                                         </td>
                                         <td className="px-6 py-4 text-xs font-bold text-[var(--insurai-on-surface)]">{entry.component}</td>
                                         <td className="px-6 py-4 text-xs font-['Inter'] text-[var(--insurai-on-surface-variant)]">{entry.event}</td>

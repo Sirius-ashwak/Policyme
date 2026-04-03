@@ -57,9 +57,9 @@ const initialFormState: FormState = {
     annualMileage: "12000",
     primaryUse: "personal",
     coverageLevel: "plus",
-    requestedCoverage: "$250,000",
-    assetValue: "$52,000",
-    deductible: "$500",
+    requestedCoverage: "₹250,000",
+    assetValue: "₹52,000",
+    deductible: "₹500",
     claimsCount: "0",
     notes: "",
 };

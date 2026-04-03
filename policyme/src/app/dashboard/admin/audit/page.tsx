@@ -28,7 +28,7 @@ function formatTimestamp(timestamp: string): string {
         return timestamp;
     }
 
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat("en-IN", {
         month: "short",
         day: "numeric",
         year: "numeric",

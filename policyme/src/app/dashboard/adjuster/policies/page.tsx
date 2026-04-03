@@ -28,10 +28,10 @@ export default function PoliciesPage() {
                     </thead>
                     <tbody>
                         {[
-                            { id: "POL-8829-XJ", holder: "Sarah Mitchell", type: "Auto — Comprehensive", coverage: "$100,000", status: "Active" },
-                            { id: "POL-1102-BQ", holder: "James Harrison", type: "Residential Premium", coverage: "$450,000", status: "Active" },
-                            { id: "POL-4491-ZT", holder: "Aria Khel", type: "Auto — Liability", coverage: "$50,000", status: "Active" },
-                            { id: "POL-9921-AM", holder: "Thomas Baxter", type: "Commercial Property", coverage: "$2,400,000", status: "Under Review" },
+                            { id: "POL-8829-XJ", holder: "Sarah Mitchell", type: "Auto — Comprehensive", coverage: "₹100,000", status: "Active" },
+                            { id: "POL-1102-BQ", holder: "James Harrison", type: "Residential Premium", coverage: "₹450,000", status: "Active" },
+                            { id: "POL-4491-ZT", holder: "Aria Khel", type: "Auto — Liability", coverage: "₹50,000", status: "Active" },
+                            { id: "POL-9921-AM", holder: "Thomas Baxter", type: "Commercial Property", coverage: "₹2,400,000", status: "Under Review" },
                         ].map((pol) => (
                             <tr key={pol.id} className="hover:bg-[var(--insurai-surface-container-low)] transition-colors cursor-pointer">
                                 <td className="px-6 py-4 text-sm font-bold text-[var(--primary)]">{pol.id}</td>

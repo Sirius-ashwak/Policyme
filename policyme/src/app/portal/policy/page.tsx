@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FileText, Shield, Calendar, DollarSign, CheckCircle2, ChevronDown } from "lucide-react";
+import { FileText, Shield, Calendar, IndianRupee, CheckCircle2, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { CustomerPolicyRecord } from "@/lib/demo-store";
@@ -17,7 +17,7 @@ function formatDateLabel(value: string): string {
         return value;
     }
 
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat("en-IN", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -145,7 +145,7 @@ export default function MyPolicyPage() {
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-slate-50/50">
                                             {[
                                                 { icon: FileText, label: "Type", value: policy.type },
-                                                { icon: DollarSign, label: "Premium", value: policy.premium },
+                                                { icon: IndianRupee, label: "Premium", value: policy.premium },
                                                 { icon: Calendar, label: "Start", value: formatDateLabel(policy.startDate) },
                                                 { icon: Calendar, label: "End", value: formatDateLabel(policy.endDate) },
                                             ].map((meta) => (
@@ -177,7 +177,7 @@ export default function MyPolicyPage() {
                                                                 <td className="px-4 py-3 text-slate-600">{item.limit}</td>
                                                                 <td className="px-4 py-3">
                                                                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                                                                        item.deductible === "None" || item.deductible === "$0"
+                                                                        item.deductible === "None" || item.deductible === "₹0"
                                                                             ? "bg-emerald-50 text-emerald-700"
                                                                             : "bg-slate-100 text-slate-600"
                                                                     }`}>
