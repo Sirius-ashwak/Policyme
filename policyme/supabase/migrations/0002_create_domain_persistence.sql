@@ -242,7 +242,7 @@ with seeded_customers as (
             'Sarah Mitchell',
             'sarah.mitchell@policyme-demo.com',
             'Mitchell Family Holdings',
-            'San Francisco, CA',
+            'Bengaluru, Karnataka',
             '1 windshield claim in the last 5 years',
             '{"preferred_policy":"Auto + Home Bundle","household_drivers":2,"property_type":"Single Family Home"}'::jsonb
         ),
@@ -252,7 +252,7 @@ with seeded_customers as (
             'Elena Rodriguez',
             'elena.rod@global-inc.com',
             'Global Incorporated',
-            'Austin, TX',
+            'Pune, Maharashtra',
             'No recent losses',
             '{"account_tier":"Enterprise","open_invoices":0}'::jsonb
         )
@@ -287,16 +287,16 @@ values
         'Comprehensive Auto Insurance',
         'Auto',
         'Active',
-        '$142/mo',
+        '₹142/mo',
         '2026-01-01',
         '2026-12-31',
         '[
-            {"item":"Collision Damage","limit":"$50,000","deductible":"$500"},
-            {"item":"Comprehensive (Theft, Weather)","limit":"$50,000","deductible":"$250"},
-            {"item":"Bodily Injury Liability","limit":"$100,000 per person","deductible":"None"},
-            {"item":"Property Damage Liability","limit":"$50,000","deductible":"None"},
-            {"item":"Windshield Replacement","limit":"Full coverage","deductible":"$0"},
-            {"item":"Rental Car Reimbursement","limit":"$40/day, 30 days max","deductible":"None"}
+            {"item":"Collision Damage","limit":"₹50,000","deductible":"₹500"},
+            {"item":"Comprehensive (Theft, Weather)","limit":"₹50,000","deductible":"₹250"},
+            {"item":"Bodily Injury Liability","limit":"₹100,000 per person","deductible":"None"},
+            {"item":"Property Damage Liability","limit":"₹50,000","deductible":"None"},
+            {"item":"Windshield Replacement","limit":"Full coverage","deductible":"₹0"},
+            {"item":"Rental Car Reimbursement","limit":"₹40/day, 30 days max","deductible":"None"}
         ]'::jsonb
     ),
     (
@@ -305,14 +305,14 @@ values
         'Homeowner''s Insurance',
         'Property',
         'Active',
-        '$210/mo',
+        '₹210/mo',
         '2026-03-01',
         '2027-02-28',
         '[
-            {"item":"Dwelling Coverage","limit":"$350,000","deductible":"$1,000"},
-            {"item":"Personal Property","limit":"$175,000","deductible":"$500"},
-            {"item":"Liability Protection","limit":"$300,000","deductible":"None"},
-            {"item":"Water Damage (Non-Flood)","limit":"$50,000","deductible":"$1,000"}
+            {"item":"Dwelling Coverage","limit":"₹350,000","deductible":"₹1,000"},
+            {"item":"Personal Property","limit":"₹175,000","deductible":"₹500"},
+            {"item":"Liability Protection","limit":"₹300,000","deductible":"None"},
+            {"item":"Water Damage (Non-Flood)","limit":"₹50,000","deductible":"₹1,000"}
         ]'::jsonb
     )
 on conflict (id) do update
@@ -335,7 +335,7 @@ insert into public.customer_billing_profiles (
 )
 values (
     (select id from public.customer_accounts where external_key = 'demo-primary-customer'),
-    '$247.50',
+    '₹247.50',
     '2026-04-24',
     true,
     '{"brand":"VISA","last4":"4291","expires":"09/2027","holderName":"Sarah Mitchell"}'::jsonb
@@ -356,9 +356,9 @@ insert into public.customer_billing_history (
     reference
 )
 values
-    ('PAY-20260324', (select id from public.customer_accounts where external_key = 'demo-primary-customer'), '2026-03-24', '$247.50', 'Paid', 'INV-2026-03'),
-    ('PAY-20260224', (select id from public.customer_accounts where external_key = 'demo-primary-customer'), '2026-02-24', '$247.50', 'Paid', 'INV-2026-02'),
-    ('PAY-20260124', (select id from public.customer_accounts where external_key = 'demo-primary-customer'), '2026-01-24', '$247.50', 'Paid', 'INV-2026-01')
+    ('PAY-20260324', (select id from public.customer_accounts where external_key = 'demo-primary-customer'), '2026-03-24', '₹247.50', 'Paid', 'INV-2026-03'),
+    ('PAY-20260224', (select id from public.customer_accounts where external_key = 'demo-primary-customer'), '2026-02-24', '₹247.50', 'Paid', 'INV-2026-02'),
+    ('PAY-20260124', (select id from public.customer_accounts where external_key = 'demo-primary-customer'), '2026-01-24', '₹247.50', 'Paid', 'INV-2026-01')
 on conflict (id) do update
 set
     customer_account_id = excluded.customer_account_id,
@@ -421,9 +421,9 @@ values
         'Sarah Mitchell',
         'Under Review',
         '2023-10-14',
-        'San Francisco, CA',
+        'Bengaluru, Karnataka',
         'A highway rock struck the front windshield during evening traffic and created a full-width crack that requires replacement.',
-        '$1,250',
+        '₹1,250',
         '2023-10-14T09:42:00Z'::timestamptz,
         '2023-10-14T13:20:00Z'::timestamptz,
         false,
@@ -433,7 +433,7 @@ values
         ]'::jsonb,
         '{
             "recommendation":"approve",
-            "payoutEstimate":"$1,688",
+            "payoutEstimate":"₹1,688",
             "reasoning":[
                 "The reported loss pattern matches standard covered auto damage.",
                 "Estimated severity is within expected payout bands for similar claims.",
@@ -455,9 +455,9 @@ values
         'James Harrison',
         'Approved',
         '2023-08-03',
-        'Oakland, CA',
+        'Pune, Maharashtra',
         'Vehicle sustained rear bumper and trunk damage after being struck at a stoplight.',
-        '$4,250',
+        '₹4,250',
         '2023-08-03T16:10:00Z'::timestamptz,
         '2023-08-05T11:00:00Z'::timestamptz,
         false,
@@ -467,7 +467,7 @@ values
         ]'::jsonb,
         '{
             "recommendation":"approve",
-            "payoutEstimate":"$5,738",
+            "payoutEstimate":"₹5,738",
             "reasoning":[
                 "The reported loss pattern matches standard covered auto damage.",
                 "Estimated severity is within expected payout bands for similar claims.",
@@ -489,9 +489,9 @@ values
         'Aria Khel',
         'Urgent',
         '2023-03-18',
-        'San Jose, CA',
+        'Hyderabad, Telangana',
         'A burst supply line flooded the kitchen and adjacent hallway, damaging cabinetry and flooring.',
-        '$8,900',
+        '₹8,900',
         '2023-03-18T07:25:00Z'::timestamptz,
         '2023-03-18T08:00:00Z'::timestamptz,
         true,
@@ -501,7 +501,7 @@ values
         ]'::jsonb,
         '{
             "recommendation":"approve",
-            "payoutEstimate":"$12,015",
+            "payoutEstimate":"₹12,015",
             "reasoning":[
                 "Water mitigation response occurred quickly, reducing secondary loss exposure.",
                 "Damage profile is consistent with a covered sudden and accidental discharge event.",
@@ -572,12 +572,12 @@ values
         'home',
         '2023-10-24',
         'Under Review',
-        '$2,500,000',
-        '$14.2M',
-        '452 Meridian Avenue, San Francisco, CA',
+        '₹2,500,000',
+        '₹14.2M',
+        '42 MG Road, Bengaluru, Karnataka',
         '1 low-severity property claim in 8 years',
         'Mixed-use commercial plaza with upgraded fire suppression and strong tenant credit profile.',
-        '{"applicant_name":"Sterling Real Estate Holdings","policy_type":"Commercial Property","requested_coverage":2500000,"asset_value":14200000,"occupancy_rate":94,"years_in_portfolio":8,"claims_last_5_years":1,"flood_zone":"secondary","fire_suppression_upgrade":true,"location":"San Francisco, CA"}'::jsonb
+        '{"applicant_name":"Sterling Real Estate Holdings","policy_type":"Commercial Property","requested_coverage":2500000,"asset_value":14200000,"occupancy_rate":94,"years_in_portfolio":8,"claims_last_5_years":1,"flood_zone":"secondary","fire_suppression_upgrade":true,"location":"Bengaluru, Karnataka"}'::jsonb
     ),
     (
         'APP-93102',
@@ -588,12 +588,12 @@ values
         'directions_car',
         '2023-10-23',
         'Pending Review',
-        '$750,000',
-        '$480,000',
-        'Oakland, CA',
+        '₹750,000',
+        '₹480,000',
+        'Pune, Maharashtra',
         '3 collision losses in 24 months',
-        'Fleet coverage request for executive and courier vehicles operating across the Bay Area.',
-        '{"applicant_name":"Northline Fleet Services","policy_type":"Commercial Auto","requested_coverage":750000,"fleet_size":12,"garaging_location":"Oakland, CA","claims_last_24_months":3,"telematics_enabled":false,"driver_training_program":false}'::jsonb
+        'Fleet coverage request for executive and courier vehicles operating across the Pune Metro region.',
+        '{"applicant_name":"Northline Fleet Services","policy_type":"Commercial Auto","requested_coverage":750000,"fleet_size":12,"garaging_location":"Pune, Maharashtra","claims_last_24_months":3,"telematics_enabled":false,"driver_training_program":false}'::jsonb
     ),
     (
         'APP-92884',
@@ -604,12 +604,12 @@ values
         'shield',
         '2023-10-23',
         'Under Review',
-        '$900,000',
-        '$1.1M',
-        'San Francisco, CA',
+        '₹900,000',
+        '₹1.1M',
+        'Bengaluru, Karnataka',
         'No prior losses',
         'Primary residence with recent roof replacement and monitored security system.',
-        '{"applicant_name":"Aria Khel","policy_type":"Residential Premium","requested_coverage":900000,"property_value":1100000,"roof_replaced_in_last_5_years":true,"monitored_security_system":true,"claims_last_5_years":0,"location":"San Francisco, CA"}'::jsonb
+        '{"applicant_name":"Aria Khel","policy_type":"Residential Premium","requested_coverage":900000,"property_value":1100000,"roof_replaced_in_last_5_years":true,"monitored_security_system":true,"claims_last_5_years":0,"location":"Bengaluru, Karnataka"}'::jsonb
     ),
     (
         'APP-91203',
@@ -620,12 +620,12 @@ values
         'favorite',
         '2023-10-22',
         'Pending Review',
-        '$1,200,000',
-        '$3.6M',
-        'San Mateo, CA',
+        '₹1,200,000',
+        '₹3.6M',
+        'Chennai, Tamil Nadu',
         'Open malpractice dispute and 2 prior high-cost claims',
         'Multi-site clinic network requesting expanded health and liability coverage.',
-        '{"applicant_name":"Harbor Medical","policy_type":"Health Comprehensive","requested_coverage":1200000,"annual_revenue":6200000,"open_litigation":true,"claims_last_36_months":2,"high_cost_claims":true,"location":"San Mateo, CA"}'::jsonb
+        '{"applicant_name":"Harbor Medical","policy_type":"Health Comprehensive","requested_coverage":1200000,"annual_revenue":6200000,"open_litigation":true,"claims_last_36_months":2,"high_cost_claims":true,"location":"Chennai, Tamil Nadu"}'::jsonb
     )
 on conflict (id) do update
 set
@@ -681,10 +681,10 @@ insert into public.graph_documents (
     source
 )
 values
-    ('DOC-1001', 'Auto_Insurance_Policy_TX.pdf', 'application/pdf', 8400000, '8.4 MB', 142, 100, 'Committed to Neo4j semantic layer', 1402, 12841, '02m 41s', 'Committed', '2026-04-02T07:10:00Z'::timestamptz, 'demo'),
+    ('DOC-1001', 'Auto_Insurance_Policy_IN.pdf', 'application/pdf', 8400000, '8.4 MB', 142, 100, 'Committed to Neo4j semantic layer', 1402, 12841, '02m 41s', 'Committed', '2026-04-02T07:10:00Z'::timestamptz, 'demo'),
     ('DOC-1002', 'Commercial_Liability_Q3.pdf', 'application/pdf', 6900000, '6.9 MB', 118, 84, 'Vectorizing chunks (241/280)', 982, 9140, '01m 54s', 'Processing', '2026-04-02T08:12:00Z'::timestamptz, 'demo'),
     ('DOC-1003', 'Homeowner_HO3_Rider.pdf', 'application/pdf', 3300000, '3.3 MB', 64, 42, 'Identifying entities and relationships', 421, 2874, '00m 49s', 'Processing', '2026-04-02T08:45:00Z'::timestamptz, 'demo'),
-    ('DOC-1004', 'State_Regulations_CA_2024.pdf', 'application/pdf', 5100000, '5.1 MB', 86, 5, 'Waiting for OCR pipeline', 0, 0, 'Queued', 'Processing', '2026-04-02T09:05:00Z'::timestamptz, 'demo')
+    ('DOC-1004', 'State_Regulations_KA_2024.pdf', 'application/pdf', 5100000, '5.1 MB', 86, 5, 'Waiting for OCR pipeline', 0, 0, 'Queued', 'Processing', '2026-04-02T09:05:00Z'::timestamptz, 'demo')
 on conflict (id) do update
 set
     name = excluded.name,

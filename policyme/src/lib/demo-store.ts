@@ -926,7 +926,7 @@ function makeSeedGraphDocuments(): GraphDocumentRecord[] {
     return [
         {
             id: "DOC-1001",
-            name: "Auto_Insurance_Policy_TX.pdf",
+            name: "Auto_Insurance_Policy_IN.pdf",
             mimeType: "application/pdf",
             sizeBytes: 8_400_000,
             sizeLabel: "8.4 MB",
@@ -974,7 +974,7 @@ function makeSeedGraphDocuments(): GraphDocumentRecord[] {
         },
         {
             id: "DOC-1004",
-            name: "State_Regulations_CA_2024.pdf",
+            name: "State_Regulations_KA_2024.pdf",
             mimeType: "application/pdf",
             sizeBytes: 5_100_000,
             sizeLabel: "5.1 MB",
