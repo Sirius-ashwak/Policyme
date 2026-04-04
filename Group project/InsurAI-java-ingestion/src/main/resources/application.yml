@@ -1,0 +1,40 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: policyme-ingestion
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        max.request.size: ${KAFKA_PRODUCER_MAX_REQUEST_SIZE:10485760}
+        compression.type: ${KAFKA_PRODUCER_COMPRESSION:gzip}
+        spring.json.add.type.headers: false
+
+# AWS S3 Configuration
+aws:
+  s3:
+    bucket-name: ${S3_BUCKET_NAME:policyme-documents}
+    region: ${AWS_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY_ID:}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:}
+
+# Kafka Topic Names
+policyme:
+  runtime:
+    allow-mocks: ${ENABLE_MOCKS:false}
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001,https://policyme.vercel.app}
+    allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+  kafka:
+    event-safety-buffer-bytes: ${KAFKA_EVENT_SAFETY_BUFFER_BYTES:8192}
+    topic:
+      document-uploaded: policyme.document.uploaded
