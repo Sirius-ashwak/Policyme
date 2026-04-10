@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 // Support English, Hindi, Tamil, Telugu, Kannada
 export type Language = "en" | "hi" | "ta" | "te" | "kn";
@@ -477,15 +477,18 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-    const [language, setLanguage] = useState<Language>("en");
-
-    // Persist language to localStorage
-    useEffect(() => {
-        const stored = localStorage.getItem("insurai_lang") as Language;
-        if (stored && Object.keys(translations).includes(stored)) {
-            setLanguage(stored);
+    const [language, setLanguage] = useState<Language>(() => {
+        if (typeof window === "undefined") {
+            return "en";
         }
-    }, []);
+
+        const stored = localStorage.getItem("insurai_lang") as Language | null;
+        if (!stored) {
+            return "en";
+        }
+
+        return Object.prototype.hasOwnProperty.call(translations, stored) ? stored : "en";
+    });
 
     const handleSetLanguage = (lang: Language) => {
         setLanguage(lang);
@@ -493,7 +496,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     };
 
     const t = (key: string): string => {
-        return translations[language][key] || key;
+        return translations[language]?.[key] || translations.en[key] || key;
     };
 
     return (
