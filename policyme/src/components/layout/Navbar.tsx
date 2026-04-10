@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { GoogleTranslateWidget } from "@/components/ui/GoogleTranslateWidget";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Logo } from "@/components/ui/Logo";
 
@@ -86,6 +87,10 @@ export function Navbar() {
 
                 {/* Right Side: Actions + User */}
                 <div className="flex items-center gap-3">
+                    <div className="sr-only" aria-hidden="true">
+                        <GoogleTranslateWidget />
+                    </div>
+
                     {/* Language Switcher */}
                     <LanguageSwitcher />
 

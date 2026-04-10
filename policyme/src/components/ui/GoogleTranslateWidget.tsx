@@ -2,43 +2,75 @@
 
 import { useEffect } from "react";
 
+const GOOGLE_TRANSLATE_SCRIPT_ID = "google-translate-script";
+const GOOGLE_TRANSLATE_ELEMENT_ID = "google_translate_element";
+
+type GoogleTranslateElementClass = {
+    new (
+        options: {
+            pageLanguage: string;
+            includedLanguages: string;
+            layout: number;
+        },
+        elementId: string
+    ): unknown;
+    InlineLayout: {
+        SIMPLE: number;
+    };
+};
+
+type GoogleTranslateApi = {
+    translate?: {
+        TranslateElement?: GoogleTranslateElementClass;
+    };
+};
+
 declare global {
     interface Window {
         googleTranslateElementInit: () => void;
-        google: any;
+        google?: GoogleTranslateApi;
     }
 }
 
 export function GoogleTranslateWidget() {
     useEffect(() => {
-        // Callback for Google Translate Initialization
-        window.googleTranslateElementInit = () => {
-            if (window.google?.translate?.TranslateElement) {
-                new window.google.translate.TranslateElement(
-                    {
-                        pageLanguage: "en",
-                        // Included some common languages relevant for global diverse platforms
-                        includedLanguages: "en,es,fr,de,ar,hi,zh-CN,ja,pt,ko,it,ru",
-                        layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-                    },
-                    "google_translate_element"
-                );
+        const initializeTranslateWidget = () => {
+            if (!window.google?.translate?.TranslateElement) {
+                return;
             }
+
+            const host = document.getElementById(GOOGLE_TRANSLATE_ELEMENT_ID);
+            if (!host || host.childElementCount > 0) {
+                return;
+            }
+
+            new window.google.translate.TranslateElement(
+                {
+                    pageLanguage: "en",
+                    includedLanguages: "en,hi,ta,te,kn,es,fr,de,ar,zh-CN,ja,pt,ko,it,ru",
+                    layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+                },
+                GOOGLE_TRANSLATE_ELEMENT_ID
+            );
         };
 
-        // Inject the Google Translate script if it's not already on the page
-        if (!document.getElementById("google-translate-script")) {
+        window.googleTranslateElementInit = initializeTranslateWidget;
+
+        if (!document.getElementById(GOOGLE_TRANSLATE_SCRIPT_ID)) {
             const script = document.createElement("script");
-            script.id = "google-translate-script";
-            script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+            script.id = GOOGLE_TRANSLATE_SCRIPT_ID;
+            script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
             script.async = true;
             document.body.appendChild(script);
+            return;
         }
+
+        initializeTranslateWidget();
     }, []);
 
     return (
         <div className="relative flex items-center h-full">
-            <div id="google_translate_element" className="flex items-center"></div>
+            <div id={GOOGLE_TRANSLATE_ELEMENT_ID} className="flex items-center"></div>
 
             {/* Global overrides to hide Google's default visual clutter and style the dropdown */}
             <style jsx global>{`
